@@ -46,6 +46,14 @@ def add_sidekiq
   insert_into_file "config/routes.rb",
     "require 'sidekiq/web'\n\n",
     before: "Rails.application.routes.draw do"
+
+  insert_into_file "config/routes.rb",
+    "\n mount Sidekiq::Web => '/sidekiq'\n\n",
+    after: "Rails.application.routes.draw do"
+end
+
+def copy_rubocop
+  copy_file ".rubocop.yml"
 end
 
 def stop_spring
@@ -65,10 +73,11 @@ add_gems
 
 after_bundle do
   stop_spring
-  add_sidekiq
 
   copy_templates
+  add_sidekiq
   configure_specs
+  copy_rubocop
 
   setup_db
 
