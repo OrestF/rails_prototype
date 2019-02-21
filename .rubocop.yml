@@ -1,0 +1,65 @@
+# Common configuration.
+AllCops:
+  # Include common Ruby source files.
+  Exclude:
+    - 'vendor/**/*'
+    - 'tmp/**/*'
+    - 'db/**/*'
+    - 'log/**/*'
+    - '.bundle/**/*'
+    - 'config/**/*'
+    - 'config/environments/**'
+    - 'config/application.rb'
+    - 'bin/**/*'
+    - 'temp/**/*'
+    - 'db/schema.rb'
+    - 'Gemfile.lock'
+    - 'node_modules/**/*'
+    - 'spec/rails_helper.rb'
+    - 'spec/support/i18.rb'
+    - 'spec/spec_helper.rb'
+
+Documentation:
+  Enabled: false
+Metrics/LineLength:
+  Max: 140
+Style/FrozenStringLiteralComment:
+  Enabled: false
+Style/BarePercentLiterals:
+  Enabled: false
+Style/PercentLiteralDelimiters:
+  Enabled: false
+Style/UnneededPercentQ:
+  Enabled: false
+Style/Lambda:
+  Enabled: false
+Metrics/MethodLength:
+  Enabled: false
+Metrics/AbcSize:
+  Enabled: false
+Metrics/CyclomaticComplexity:
+  Enabled: false
+Metrics/PerceivedComplexity:
+  Enabled: false
+Style/ClassAndModuleChildren:
+  Enabled: false
+Metrics/BlockLength:
+  Enabled: false
+Metrics/ParameterLists:
+  Enabled: false
+Style/AsciiComments:
+  Enabled: false
+Metrics/ClassLength:
+  Enabled: false
+Metrics/ModuleLength:
+  Enabled: false
+Lint/SafeNavigationConsistency:
+  Enabled: false
+
+Lint/AmbiguousBlockAssociation:
+  Exclude:
+    - "spec/**/*"
+
+Naming/UncommunicativeMethodParamName:
+  Exclude:
+    - 'lib/**/*'
