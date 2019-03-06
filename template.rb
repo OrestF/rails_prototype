@@ -4,30 +4,31 @@ def source_paths
 end
 
 def add_gems
-  gem 'sidekiq', '~> 5.2', '>= 5.2.5'
-  gem 'r_creds', '~> 0.2.0'
-  gem 'redis', '~> 4.1'
-  gem 'slim-rails', '~> 3.2'
+  gem 'sidekiq'
+  gem 'r_creds'
+  gem 'redis'
+  gem 'slim-rails'
 
   gem_group :development, :test do
-    gem 'dotenv', '~> 2.6'
+    gem 'dotenv'
   end
 
   gem_group :development do
-    gem 'rubocop', '~> 0.65.0'
-    gem 'rubycritic', '~> 3.5', '>= 3.5.2'
-    gem 'brakeman', '~> 4.4'
-    gem 'bullet', '~> 5.9'
+    gem 'rubocop'
+    gem 'rubycritic'
+    gem 'brakeman'
+    gem 'bullet'
   end
 
   gem_group :test do
-    gem 'rspec-rails', '~> 3.8', '>= 3.8.2'
-    gem 'rspec-sidekiq', '~> 3.0', '>= 3.0.3'
-    gem 'vcr', '~> 4.0'
-    gem 'fakeredis', '~> 0.7.0'
-    gem 'factory_bot_rails', '~> 5.0', '>= 5.0.1'
-    gem 'faker', '~> 1.9', '>= 1.9.3'
-    gem 'database_cleaner', '~> 1.7'
+    gem 'rspec-rails'
+    gem 'rspec-sidekiq'
+    gem 'vcr'
+    gem 'fakeredis'
+    gem 'factory_bot_rails'
+    gem 'faker'
+    gem 'database_cleaner'
+    gem 'webmock'
   end
 end
 
