@@ -1,6 +1,5 @@
-
 def source_paths
-  [File.expand_path(File.dirname(__FILE__))]
+  [__dir__]
 end
 
 def add_gems
@@ -37,35 +36,45 @@ def copy_templates
 end
 
 def configure_specs
-  directory "spec", force: true
-  environment "config.generators.test_framework = :rspec"
+  directory 'spec', force: true
+  environment 'config.generators.test_framework = :rspec'
 end
 
 def add_sidekiq
-  environment "config.active_job.queue_adapter = :sidekiq"
+  environment 'config.active_job.queue_adapter = :sidekiq'
 
-  insert_into_file "config/routes.rb",
-    "require 'sidekiq/web'\n\n",
-    before: "Rails.application.routes.draw do"
+  insert_into_file 'config/routes.rb',
+                   "require 'sidekiq/web'\n\n",
+                   before: 'Rails.application.routes.draw do'
 
-  insert_into_file "config/routes.rb",
-    "\n mount Sidekiq::Web => '/sidekiq'\n\n",
-    after: "Rails.application.routes.draw do"
+  insert_into_file 'config/routes.rb',
+                   "\n mount Sidekiq::Web => '/sidekiq'\n\n",
+                   after: 'Rails.application.routes.draw do'
 end
 
 def copy_rubocop
-  copy_file ".rubocop.yml"
+  copy_file '.rubocop.yml'
 end
 
 def stop_spring
-  run "spring stop"
+  run 'spring stop'
 end
 
 def setup_db
-  rails_command "db:create"
-  rails_command "db:migrate"
+  rails_command 'db:create'
+  rails_command 'db:migrate'
 end
 
+def copy_docker
+  directory 'docker'
+  copy_file 'docker-compose.yml'
+  copy_file 'docker-compose.development.yml'
+end
+
+def copy_env
+  copy_file '.env'
+  copy_file '.env.development'
+end
 
 # Main setup
 source_paths
@@ -76,6 +85,8 @@ after_bundle do
   stop_spring
 
   copy_templates
+  copy_docker
+  copy_env
   add_sidekiq
   configure_specs
   copy_rubocop
@@ -83,6 +94,6 @@ after_bundle do
   setup_db
 
   git :init
-  git add: "."
-  git commit: %Q{ -m "Initial commit" }
+  git add: '.'
+  git commit: %q{ -m "Initial commit" }
 end
