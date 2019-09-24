@@ -10,6 +10,7 @@ RSpec.configure do |config|
         (or set it to false) to prevent uncommitted transactions being used in JavaScript-dependent specs.
       MSG
     end
+
     DatabaseCleaner.clean_with(:truncation)
   end
 
