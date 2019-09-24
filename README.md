@@ -12,6 +12,10 @@ Default configs are:
 
 ## Usage
 ```bash
+ $ curl -s -L http://tiny.cc/ueuadz | sh /dev/stdin -r 6.0.0 -t api -n test_app
+```
+OR
+```bash
  $ curl -s -L https://raw.githubusercontent.com/OrestF/rails_prototype/master/setup.sh | sh /dev/stdin -r 6.0.0 -t api -n test_app
 ```
 
