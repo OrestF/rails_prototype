@@ -1,12 +1,19 @@
 def source_paths
-  [__dir__]
+  [File.expand_path(__dir__)]
 end
 
 def add_gems
   gem 'sidekiq'
   gem 'r_creds'
   gem 'redis'
-  gem 'slim-rails'
+  gem 'oj'
+  gem 'blueprinter'
+  gem 'pagy'
+  gem 'api-pagination'
+  gem 'apitome'
+  gem 'rack-cors'
+  gem 'rspec_api_documentation'
+  gem 'devise-jwt'
 
   gem_group :development, :test do
     gem 'dotenv'
@@ -20,7 +27,7 @@ def add_gems
   end
 
   gem_group :test do
-    gem 'rspec-rails'
+    gem 'rspec-rails', '~> 4.0.0.beta2'
     gem 'rspec-sidekiq'
     gem 'vcr'
     gem 'fakeredis'
@@ -32,32 +39,54 @@ def add_gems
 end
 
 def copy_templates
-  # add folders here
+  directory 'config'
+end
+
+def configure_cors
+  environment "config.middleware.insert_before 0, Rack::Cors do
+    allow do
+      origins '*'
+      resource '*', headers: :any, methods: [:get, :post, :put, :delete, :options], expose: ['authorization']
+    end
+  end \n"
+end
+
+def configure_application
+  insert_into_file(
+    'config/application.rb',
+    "require 'sprockets/railtie'\n\n",
+    before: 'Bundler.require(*Rails.groups)'
+  )
 end
 
 def configure_specs
   directory 'spec', force: true
   environment 'config.generators.test_framework = :rspec'
+  rails_command 'generate apitome:install'
 end
 
 def add_sidekiq
   environment 'config.active_job.queue_adapter = :sidekiq'
 
-  insert_into_file 'config/routes.rb',
-                   "require 'sidekiq/web'\n\n",
-                   before: 'Rails.application.routes.draw do'
+  insert_into_file(
+    'config/routes.rb',
+    "require 'sidekiq/web'\n\n",
+    before: 'Rails.application.routes.draw do'
+  )
 
-  insert_into_file 'config/routes.rb',
-                   "\n mount Sidekiq::Web => '/sidekiq'\n\n",
-                   after: 'Rails.application.routes.draw do'
-end
-
-def copy_rubocop
-  copy_file '.rubocop.yml'
+  insert_into_file(
+    'config/routes.rb',
+    "\n mount Sidekiq::Web => '/sidekiq'\n\n",
+    after: 'Rails.application.routes.draw do'
+  )
 end
 
 def stop_spring
   run 'spring stop'
+end
+
+def copy_rubocop
+  copy_file '.rubocop.yml'
 end
 
 def setup_db
@@ -88,6 +117,8 @@ after_bundle do
   copy_docker
   copy_env
   add_sidekiq
+  configure_cors
+  configure_application
   configure_specs
   copy_rubocop
 
@@ -95,5 +126,5 @@ after_bundle do
 
   git :init
   git add: '.'
-  git commit: %q{ -m "Initial commit" }
+  git commit: %q{ -m 'Initial commit' }
 end
