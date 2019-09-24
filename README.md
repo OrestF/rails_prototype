@@ -10,8 +10,10 @@ Default configs are:
 * redis
 * test environment is set
 
-1.  Copy setup_rails_prototype.sh into folder where you want to create your_rails_app folder
-1. Specify rails version and your app name!
+## Usage
+```bash
+ $ curl -s -L https://raw.githubusercontent.com/OrestF/rails_prototype/master/setup.sh | sh /dev/stdin -r 6.0.0 -t api -n test_app
+```
 
 ### Ruby version must be preinstalled and selected must be preinstalled!
 ```bash
