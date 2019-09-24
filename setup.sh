@@ -1,4 +1,4 @@
-current_version="0.0.1beta#2a345"
+current_version="1.0.0#2a345"
 usage="Usage:
 $(basename "$0") [options]
 
