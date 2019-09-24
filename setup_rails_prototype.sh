@@ -33,12 +33,12 @@ gem install rails -v $VERSION
 if [ x$TYPE = x"api" ]
 then
     echo 'Rails API setup started'
-    git clone https://github.com/OrestF/rails_api_prototype.git
-    rails _$VERSION\_ new $APP_NAME --api -d postgresql -T --skip-coffee -m ./rails_api_prototype/template.rb
-    rm -rf ./rails_api_prototype
+    git clone -b rails_api --single-branch https://github.com/OrestF/rails_prototype.git
+    rails _$VERSION\_ new $APP_NAME --api -d postgresql -T --skip-coffee -m ./rails_prototype/template.rb
+    rm -rf ./rails_prototype
 else
     echo 'Rails setup started'
-    git clone https://github.com/OrestF/rails_prototype.git
+    git clone -b rails_monolith --single-branch https://github.com/OrestF/rails_prototype.git
     rails _$VERSION\_ new $APP_NAME -d postgresql -T --skip-coffee -m ./rails_prototype/template.rb
     rm -rf ./rails_prototype
 fi
