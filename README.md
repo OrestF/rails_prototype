@@ -30,7 +30,3 @@ Script options:
     -h         # Show this help message and quit
     -v         # Show script version number and quit"
 ```
-
-```bash
-sh setup_rails_prototype.sh -r 5.2.2 -t api -n my_awesome_app
-```
