@@ -28,7 +28,6 @@ def add_gems
     gem 'faker'
     gem 'database_cleaner'
     gem 'webmock'
-    gem 'capybara-webkit'
   end
 end
 
