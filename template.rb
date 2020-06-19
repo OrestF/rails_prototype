@@ -20,7 +20,7 @@ def add_gems
   end
 
   gem_group :test do
-    gem 'rspec-rails', '~> 4.0.0.beta2'
+    gem 'rspec-rails', '~> 4.0', '>= 4.0.1'
     gem 'rspec-sidekiq'
     gem 'vcr'
     gem 'fakeredis'
@@ -77,6 +77,12 @@ def copy_env
   copy_file '.env.development'
 end
 
+def copy_docs
+  copy_file 'README.md'
+  copy_file 'CHANGELOG.md'
+  copy_file 'lemme_check_remote.sh'
+end
+
 # Main setup
 source_paths
 
@@ -91,6 +97,7 @@ after_bundle do
   add_sidekiq
   configure_specs
   copy_rubocop
+  copy_docs
 
   setup_db
 
