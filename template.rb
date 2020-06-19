@@ -33,7 +33,7 @@ def add_gems
 end
 
 def copy_templates
-  # add folders here
+  copy_file 'app/assets/config/manifest.js'
 end
 
 def configure_specs
@@ -78,7 +78,7 @@ def copy_env
 end
 
 def copy_docs
-  copy_file 'README_EXAMPLE .md''README.md'
+  copy_file 'README_EXAMPLE.md' 'README.md'
   copy_file 'CHANGELOG_EXAMPLE.md' 'CHANGELOG.md'
   copy_file 'lemme_check_remote.sh'
 end
