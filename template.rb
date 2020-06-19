@@ -78,8 +78,8 @@ def copy_env
 end
 
 def copy_docs
-  copy_file 'README.md'
-  copy_file 'CHANGELOG.md'
+  copy_file 'README_EXAMPLE .md''README.md'
+  copy_file 'CHANGELOG_EXAMPLE.md' 'CHANGELOG.md'
   copy_file 'lemme_check_remote.sh'
 end
 
