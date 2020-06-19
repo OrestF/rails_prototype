@@ -106,6 +106,12 @@ def copy_env
   copy_file '.env.development'
 end
 
+def copy_docs
+  copy_file 'README_EXAMPLE .md''README.md'
+  copy_file 'CHANGELOG_EXAMPLE.md' 'CHANGELOG.md'
+  copy_file 'lemme_check_remote.sh'
+end
+
 # Main setup
 source_paths
 
@@ -122,6 +128,7 @@ after_bundle do
   configure_application
   configure_specs
   copy_rubocop
+  copy_docs
 
   setup_db
 
