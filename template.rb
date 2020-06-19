@@ -40,6 +40,7 @@ end
 
 def copy_templates
   directory 'config'
+  copy_file 'app/assets/config/manifest.js'
 end
 
 def configure_cors
