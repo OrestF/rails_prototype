@@ -27,7 +27,7 @@ def add_gems
   end
 
   gem_group :test do
-    gem 'rspec-rails', '~> 4.0.0.beta2'
+    gem 'rspec-rails', '~> 4.0', '>= 4.0.1'
     gem 'rspec-sidekiq'
     gem 'vcr'
     gem 'fakeredis'
