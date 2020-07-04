@@ -7,6 +7,7 @@ def add_gems
   gem 'r_creds'
   gem 'redis'
   gem 'slim-rails'
+  gem 'xlog'
 
   gem_group :development, :test do
     gem 'dotenv'
@@ -84,6 +85,10 @@ def copy_docs
   empty_directory 'doc'
 end
 
+def configure_xlog
+  environment 'config.middleware.use Xlog::Middleware'
+end
+
 def setup_abdi
   directory 'infrastructure'
   directory 'data'
@@ -116,6 +121,7 @@ after_bundle do
   configure_specs
   copy_rubocop
   copy_docs
+  configure_xlog
 
   setup_abdi
 
