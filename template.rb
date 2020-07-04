@@ -14,6 +14,7 @@ def add_gems
   gem 'rack-cors'
   gem 'rspec_api_documentation'
   gem 'devise-jwt'
+  gem 'xlog'
 
   gem_group :development, :test do
     gem 'dotenv'
@@ -110,6 +111,29 @@ def copy_docs
   copy_file 'README_EXAMPLE.md', 'README.md'
   copy_file 'CHANGELOG_EXAMPLE.md', 'CHANGELOG.md'
   copy_file 'lemme_check_remote.sh'
+  empty_directory 'doc'
+end
+
+def configure_xlog
+  environment 'config.middleware.use Xlog::Middleware'
+end
+
+def setup_abdi
+  directory 'infrastructure'
+  directory 'data'
+  remove_dir 'app/models'
+  directory 'business'
+
+  insert_into_file(
+    'config/application.rb',
+    %q(
+    config.paths.add 'data', eager_load: true
+    config.paths.add 'data/concerns', eager_load: true
+    config.paths.add 'business', eager_load: true
+    config.paths.add 'infrastructure', eager_load: true
+    ),
+    after: 'class Application < Rails::Application'
+  )
 end
 
 # Main setup
@@ -129,6 +153,9 @@ after_bundle do
   configure_specs
   copy_rubocop
   copy_docs
+  configure_xlog
+
+  setup_abdi
 
   setup_db
 
