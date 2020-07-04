@@ -1,4 +1,4 @@
-# Default rails application
+# Default rails application v.0.2
 
 Boot up new rails application with configured test environment and all necessary gems.
 Default configs are:
@@ -9,6 +9,15 @@ Default configs are:
 * sidekiq as background processing adapter
 * redis
 * test environment is set
+* [XLog](https://github.com/coaxsoft/xlog) - as default errors middleware
+* [ABDI](https://gist.github.com/OrestF/084f7cb38c16084234f4c41338c364dc) architecture pre-installed 
+
+### For API version:
+
+* [rspec_api_documentation](https://github.com/zipmark/rspec_api_documentation) - specs and documentation generator
+* [blueprinter](https://github.com/procore/blueprinter) - Simple, Fast, and Declarative Serialization Library for Ruby
+* [pagy](https://github.com/ddnexus/pagy) - The ultimate pagination ruby gem
+* [Oj](https://github.com/ohler55/oj) - Optimized JSON
 
 ## Usage
 ```bash
