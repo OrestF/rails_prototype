@@ -91,10 +91,12 @@ def setup_abdi
   empty_directory 'business'
 
   insert_into_file 'config/application.rb',
-                   "\n  config.paths.add 'data', eager_load: true \n\n",
-                   "\n  config.paths.add 'data/concerns', eager_load: true \n\n",
-                   "\n  config.paths.add 'business', eager_load: true \n\n",
-                   "\n  config.paths.add 'infrastructure', eager_load: true \n\n",
+                   %q(
+                     config.paths.add 'data', eager_load: true
+                     config.paths.add 'data/concerns', eager_load: true
+                     config.paths.add 'business', eager_load: true
+                     config.paths.add 'infrastructure', eager_load: true
+                   ),
                    after: 'class Application < Rails::Application'
 end
 
