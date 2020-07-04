@@ -35,6 +35,7 @@ end
 def copy_templates
   # not necessary for monolith
   # copy_file 'app/assets/config/manifest.js'
+  copy_file 'bin/setup'
 end
 
 def configure_specs
