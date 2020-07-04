@@ -32,7 +32,8 @@ def add_gems
 end
 
 def copy_templates
-  copy_file 'app/assets/config/manifest.js'
+  # not necessary for monolith
+  # copy_file 'app/assets/config/manifest.js'
 end
 
 def configure_specs
@@ -80,13 +81,14 @@ def copy_docs
   copy_file 'README_EXAMPLE.md', 'README.md'
   copy_file 'CHANGELOG_EXAMPLE.md', 'CHANGELOG.md'
   copy_file 'lemme_check_remote.sh'
+  empty_directory 'doc'
 end
 
 def setup_abdi
   directory 'infrastructure'
-  directory 'app/models', 'data'
-  remove_dir('app/models')
-  empty_directory('business')
+  directory 'data'
+  remove_dir 'app/models'
+  empty_directory 'business'
 
   insert_into_file 'config/application.rb',
                    "\n  config.paths.add 'data', eager_load: true \n\n",
