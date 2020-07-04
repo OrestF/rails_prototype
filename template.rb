@@ -88,16 +88,17 @@ def setup_abdi
   directory 'infrastructure'
   directory 'data'
   remove_dir 'app/models'
-  empty_directory 'business'
+  directory 'business'
 
-  insert_into_file 'config/application.rb',
-                   %q(
-                     config.paths.add 'data', eager_load: true
-                     config.paths.add 'data/concerns', eager_load: true
-                     config.paths.add 'business', eager_load: true
-                     config.paths.add 'infrastructure', eager_load: true
-                   ),
-                   after: 'class Application < Rails::Application'
+  insert_into_file(
+    'config/application.rb',
+    %q(
+      config.paths.add 'data', eager_load: true
+      config.paths.add 'data/concerns', eager_load: true
+      config.paths.add 'business', eager_load: true
+      config.paths.add 'infrastructure', eager_load: true
+    ),
+    after: 'class Application < Rails::Application')
 end
 
 # Main setup
