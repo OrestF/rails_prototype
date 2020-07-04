@@ -82,6 +82,20 @@ def copy_docs
   copy_file 'lemme_check_remote.sh'
 end
 
+def setup_abdi
+  directory 'infrastructure'
+  directory 'app/models', 'data'
+  remove_dir('app/models')
+  empty_directory('business')
+
+  insert_into_file 'config/application.rb',
+                   "\n  config.paths.add 'data', eager_load: true \n\n",
+                   "\n  config.paths.add 'data/concerns', eager_load: true \n\n",
+                   "\n  config.paths.add 'business', eager_load: true \n\n",
+                   "\n  config.paths.add 'infrastructure', eager_load: true \n\n",
+                   after: 'class Application < Rails::Application'
+end
+
 # Main setup
 source_paths
 
@@ -97,6 +111,8 @@ after_bundle do
   configure_specs
   copy_rubocop
   copy_docs
+
+  setup_abdi
 
   setup_db
 
