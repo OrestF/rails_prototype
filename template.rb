@@ -9,6 +9,7 @@ def add_gems
   gem 'oj'
   gem 'blueprinter'
   gem 'pagy'
+  gem 'readymade'
   gem 'api-pagination'
   gem 'apitome'
   gem 'rack-cors'
