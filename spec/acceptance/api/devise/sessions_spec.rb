@@ -3,8 +3,7 @@
 require 'rails_helper'
 
 resource 'v1 Users > Authentication' do
-  let!(:organization) { create(:organization) }
-  let!(:user) { create(:user, password: 'correct_password', organization: organization) }
+  let!(:user) { create(:user, password: 'correct_password') }
 
   post '/api/v1/users/sign_in' do
     let(:raw_post) { params.to_json }

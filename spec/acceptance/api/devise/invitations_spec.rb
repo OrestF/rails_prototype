@@ -17,27 +17,25 @@ resource 'v1 Users > Authentication' do
     context 'when params are correct' do
       before { user.invite! }
 
-      context 'when manager' do
-        let(:password) { Faker::Internet.password }
-        let!(:user) { create(:user, :manager, :locked) }
-        let(:params) do
-          {
-            user:
-              {
-                invitation_token: user.raw_invitation_token,
-                password: password,
-                password_confirmation: password
-              }
-          }
-        end
+      let(:password) { Faker::Internet.password }
+      let!(:user) { create(:user, :locked) }
+      let(:params) do
+        {
+          user:
+            {
+              invitation_token: user.raw_invitation_token,
+              password: password,
+              password_confirmation: password
+            }
+        }
+      end
 
-        it 'PUT invitation' do
-          do_request
-          expect(response_status).to eq 200
-          expect(response_json['user']['email']).to eq user.email
-          expect(user.reload.invitation_accepted_at).to be_present
-          expect(user.reload.active?).to be true
-        end
+      it 'PUT invitation' do
+        do_request
+        expect(response_status).to eq 200
+        expect(response_json['user']['email']).to eq user.email
+        expect(user.reload.invitation_accepted_at).to be_present
+        expect(user.reload.active?).to be true
       end
     end
   end

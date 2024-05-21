@@ -295,7 +295,7 @@ Devise.setup do |config|
 
     # JWT configs
     config.jwt do |jwt|
-      jwt.secret = RCreds.fetch(:devise_jwt_secret_key)
+      jwt.secret = RCreds.fetch(:devise, :jwt_secret_key)
       jwt.dispatch_requests = [
         ['POST', %r{^/users/sign_in$}],
         ['PATCH', %r{^/users/invitation$}]

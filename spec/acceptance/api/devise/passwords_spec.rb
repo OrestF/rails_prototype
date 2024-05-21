@@ -34,7 +34,7 @@ resource 'v1 Users > Authentication' do
     context 'with invalid params' do
       let(:email) { nil }
 
-      it 'POST passwords [invalid]' do
+      it 'POST passwords [invalid]', document: false do
         do_request
         expect(response_status).to eq 404
         expect(mail).to be_nil
@@ -71,7 +71,7 @@ resource 'v1 Users > Authentication' do
     end
 
     context 'with invalid params', password_confirmation: 'old_password' do
-      it 'PATCH password [invalid]' do
+      it 'PATCH password [invalid]', document: false do
         do_request
 
         expect(response_status).to eq 400

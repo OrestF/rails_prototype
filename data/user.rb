@@ -1,0 +1,12 @@
+# frozen_string_literal: true
+
+class User < ApplicationRecord
+  include Devise::JWT::RevocationStrategies::JTIMatcher
+  include Users::TemporaryData
+
+  # Include default devise modules. Others available are:
+  # :confirmable, :trackable and :omniauthable
+  devise :database_authenticatable, :jwt_authenticatable, :invitable, :lockable,
+         :recoverable, :validatable, :timeoutable, jwt_revocation_strategy: self,
+         lock_strategy: :none, unlock_strategy: :none
+end
