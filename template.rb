@@ -5,7 +5,6 @@ end
 def add_gems
   gem 'sidekiq'
   gem 'r_creds'
-  gem 'redis'
   gem 'oj'
   gem 'blueprinter'
   gem 'pagy'
@@ -16,6 +15,7 @@ def add_gems
   gem 'rspec_api_documentation'
   gem 'devise-jwt'
   gem 'xlog'
+  gem "image_processing"
 
   gem_group :development, :test do
     gem 'dotenv'
@@ -29,6 +29,7 @@ def add_gems
   end
 
   gem_group :test do
+    gem 'simplecov'
     gem 'rspec-rails', '~> 4.0', '>= 4.0.1'
     gem 'rspec-sidekiq'
     gem 'vcr'
@@ -41,8 +42,8 @@ def add_gems
 end
 
 def copy_templates
-  directory 'config'
-  copy_file 'bin/setup'
+  copy_file 'config/initializers/blueprinter.rb'
+  copy_file 'config/initializers/devise.rb'
   copy_file 'app/assets/config/manifest.js'
 end
 
@@ -50,12 +51,12 @@ def configure_cors
   environment "config.middleware.insert_before 0, Rack::Cors do
     allow do
       origins '*'
-      resource '*', headers: :any, methods: [:get, :post, :put, :delete, :options], expose: ['authorization']
+      resource '*', headers: :any, methods: %i[get post put delete options], expose: ['authorization']
     end
   end \n"
 end
 
-def configure_application
+def configure_sprockets
   insert_into_file(
     'config/application.rb',
     "require 'sprockets/railtie'\n\n",
@@ -63,13 +64,22 @@ def configure_application
   )
 end
 
-def configure_specs
-  directory 'spec', force: true
+def configure_tests
+  run 'rspec --init'
+  copy_file 'config/initializers/rspec_api_documentation.rb'
+  directory 'spec'#, force: true
   environment 'config.generators.test_framework = :rspec'
   rails_command 'generate apitome:install'
+
+  insert_into_file(
+    'app/assets/config/manifest.js',
+    "//= link apitome/application.css\n\n
+     //= link apitome/highlight_themes/default.css\n\n
+     //= link apitome/application.js\n\n"
+  )
 end
 
-def add_sidekiq
+def setup_sidekiq
   environment 'config.active_job.queue_adapter = :sidekiq'
 
   insert_into_file(
@@ -80,7 +90,23 @@ def add_sidekiq
 
   insert_into_file(
     'config/routes.rb',
-    "\n mount Sidekiq::Web => '/sidekiq'\n\n",
+    "\n mount with_admin_auth.call(Sidekiq::Web), at: '/sidekiq'\n\n",
+    after: 'get "up" => "rails/health#show", as: :rails_health_check'
+  )
+end
+
+def setup_routes_auth
+  insert_into_file(
+    'config/routes.rb',
+    "\n\n with_admin_auth = lambda do |app|
+    Rack::Builder.new do
+      use Rack::Auth::Basic do |username, password|
+        ActiveSupport::SecurityUtils.secure_compare(Digest::SHA256.hexdigest(username), Digest::SHA256.hexdigest(RCreds.fetch(:admin, :username))) &
+          ActiveSupport::SecurityUtils.secure_compare(Digest::SHA256.hexdigest(password), Digest::SHA256.hexdigest(RCreds.fetch(:admin, :password)))
+      end
+      run app
+    end
+  end\n",
     after: 'Rails.application.routes.draw do'
   )
 end
@@ -89,31 +115,33 @@ def stop_spring
   run 'spring stop'
 end
 
-def copy_rubocop
-  copy_file '.rubocop.yml'
-end
+# TODO: outdated
+# def copy_rubocop
+#   copy_file '.rubocop.yml'
+# end
 
 def setup_db
-  rails_command 'db:create'
-  rails_command 'db:migrate'
+  rails_command 'db:prepare'
 end
 
-def copy_docker
-  directory 'docker'
-  copy_file 'docker-compose.yml'
-  copy_file 'docker-compose.development.yml'
-end
+# TODO: outdated
+# def copy_docker
+#   directory 'docker'
+#   copy_file 'docker-compose.yml'
+#   copy_file 'docker-compose.development.yml'
+# end
 
-def copy_env
-  copy_file '.env'
-  copy_file '.env.development'
-end
+# TODO: outdated
+# def copy_env
+#   copy_file '.env'
+#   copy_file '.env.development'
+# end
 
 def copy_docs
   copy_file 'README_EXAMPLE.md', 'README.md'
   copy_file 'CHANGELOG_EXAMPLE.md', 'CHANGELOG.md'
   copy_file 'lemme_check_remote.sh'
-  empty_directory 'doc'
+  # empty_directory 'doc'
 end
 
 def configure_xlog
@@ -123,8 +151,9 @@ end
 def setup_abdi
   directory 'infrastructure'
   directory 'data'
-  remove_dir 'app/models'
   directory 'business'
+
+  remove_dir 'app/models'
 
   insert_into_file(
     'config/application.rb',
@@ -138,30 +167,41 @@ def setup_abdi
   )
 end
 
+def setup_direct_uploads
+  directory 'app/controllers/api/v1/direct_uploads_controller.rb'
+  directory 'app/services/direct_uploads'
+end
+
+def setup_active_storage
+  rails_command 'active_storage:install'
+end
+
 # Main setup
 source_paths
 
 add_gems
 
 after_bundle do
-  stop_spring
+  puts '______________________________________________AFTER_BUNDLE_____________________________________________________'
+  # stop_spring
 
   copy_templates
-  copy_docker
-  copy_env
-  add_sidekiq
+  setup_routes_auth
+  setup_sidekiq
   configure_cors
-  configure_application
-  configure_specs
-  copy_rubocop
-  copy_docs
+  configure_sprockets
+  configure_tests
+  # copy_rubocop
   configure_xlog
 
   setup_abdi
 
+  copy_docs
+  setup_active_storage
   setup_db
 
-  git :init
-  git add: '.'
-  git commit: %q{ -m 'Initial commit' }
+  # git :init
+  # git add: '.'
+  # git commit: %q{ -m 'Initial commit' }
+  puts '______________________________________________FINISH_____________________________________________________'
 end
