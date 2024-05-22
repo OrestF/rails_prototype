@@ -1,5 +1,13 @@
+require 'uri'
+require 'open-uri'
+
 def source_paths
   [File.expand_path(__dir__)]
+end
+
+def download_file(from_path, to_path = from_path)
+  base_url = 'https://raw.githubusercontent.com/OrestF/rails_prototype/rails_api'
+  get([base_url, from_path].join('/'), to_path)
 end
 
 def add_gems
@@ -50,10 +58,12 @@ def add_gems
 end
 
 def copy_configs
-  copy_file 'config/initializers/blueprinter.rb'
-  copy_file 'config/initializers/devise.rb'
-  copy_file 'config/initializers/redis.rb'
-  copy_file 'config/initializers/rspec_api_documentation.rb'
+  download_file 'config/initializers/rspec_api_documentation.rb'
+
+  download_file 'config/initializers/blueprinter.rb'
+  download_file 'config/initializers/devise.rb'
+  download_file 'config/initializers/redis.rb'
+  download_file 'config/initializers/rspec_api_documentation.rb'
 end
 
 def configure_cors
@@ -80,7 +90,7 @@ def configure_tests
 end
 
 def setup_apidocs
-  copy_file 'config/initializers/rspec_api_documentation.rb'
+  download_file 'config/initializers/rspec_api_documentation.rb'
   rails_command 'generate apitome:install'
   insert_into_file(
     'app/assets/config/manifest.js',
@@ -90,7 +100,7 @@ def setup_apidocs
   )
 
   route "get '/api/docs', to: 'apidocs#index'"
-  copy_file 'app/controllers/apidocs_controller.rb'
+  download_file 'app/controllers/apidocs_controller.rb'
 end
 
 def setup_sidekiq
@@ -139,20 +149,20 @@ end
 
 def copy_docker
   directory 'nginx'
-  copy_file 'docker-compose.test.yml'
-  copy_file 'docker-compose.yml'
-  copy_file 'docker-entrypoint.sh'
-  copy_file 'docker-entrypoint.test.sh'
-  copy_file 'docker-entrypoint-anycable.sh'
-  copy_file 'docker-entrypoint-sidekiq.sh'
-  copy_file 'Dockerfile'
-  copy_file '.env.example', '.env'
+  download_file 'docker-compose.test.yml'
+  download_file 'docker-compose.yml'
+  download_file 'docker-entrypoint.sh'
+  download_file 'docker-entrypoint.test.sh'
+  download_file 'docker-entrypoint-anycable.sh'
+  download_file 'docker-entrypoint-sidekiq.sh'
+  download_file 'Dockerfile'
+  download_file '.env.example', '.env'
 end
 
 def copy_docs
-  copy_file 'README_EXAMPLE.md', 'README.md'
-  copy_file 'CHANGELOG_EXAMPLE.md', 'CHANGELOG.md'
-  copy_file 'lemme_check_remote.sh'
+  download_file 'README_EXAMPLE.md', 'README.md'
+  download_file 'CHANGELOG_EXAMPLE.md', 'CHANGELOG.md'
+  download_file 'lemme_check_remote.sh'
   empty_directory '.docs'
 end
 
@@ -163,8 +173,8 @@ end
 def setup_abdi
   directory 'infrastructure'
 
-  copy_file 'data/application_record.rb'
-  copy_file 'data/current.rb'
+  download_file 'data/application_record.rb'
+  download_file 'data/current.rb'
   directory 'data/concerns'
 
   directory 'business'
@@ -226,9 +236,9 @@ def setup_default_url_options
 end
 
 def setup_home_page
-  copy_file 'app/controllers/development_pages_controller.rb'
-  copy_file 'app/views/development_pages/home.html.erb'
-  copy_file 'app/views/layouts/development_pages.html.erb'
+  download_file 'app/controllers/development_pages_controller.rb'
+  download_file 'app/views/development_pages/home.html.erb'
+  download_file 'app/views/layouts/development_pages.html.erb'
   route "root to: 'development_pages#home'"
 end
 
@@ -237,16 +247,16 @@ def setup_users
 
   setup_devise
 
-  copy_file 'data/user.rb'
+  download_file 'data/user.rb'
 
-  copy_file 'app/controllers/api/devise/invitations_controller.rb'
-  copy_file 'app/controllers/api/devise/sessions_controller.rb'
-  copy_file 'app/controllers/api/devise/passwords_controller.rb'
+  download_file 'app/controllers/api/devise/invitations_controller.rb'
+  download_file 'app/controllers/api/devise/sessions_controller.rb'
+  download_file 'app/controllers/api/devise/passwords_controller.rb'
   # TODO: add confirmations_controller.rb
   # TODO: add registrations_controller.rb
 
-  copy_file 'business/users/operations/send_password_restore_email.rb'
-  copy_file 'business/users/forms/send_password_restore_email.rb'
+  download_file 'business/users/operations/send_password_restore_email.rb'
+  download_file 'business/users/forms/send_password_restore_email.rb'
 
   gsub_file 'config/routes.rb', /devise_for :users/, ''
 
@@ -262,6 +272,7 @@ end
 def cleanup
   remove_dir 'app/models'
   remove_dir 'spec/models'
+  remove_dir 'setup_temp_files'
 end
 
 def generate_api_docs
