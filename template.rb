@@ -30,9 +30,11 @@ def add_gems
   gem 'file_exists'
   gem 'motor-admin'
   gem 'maintenance_tasks'
+  gem 'sweet_staging'
+  gem 'rails_performance'
 
   gem_group :development, :test do
-    gem 'dotenv'
+    # gem 'dotenv'
     gem 'byebug'
   end
 
@@ -83,9 +85,9 @@ def configure_sprockets
 end
 
 def download_spec_acceptance_directory
-  download_file 'spec/acceptance/api/v1/devise/invitations_spec.rb'
-  download_file 'spec/acceptance/api/v1/devise/passwords_spec.rb'
-  download_file 'spec/acceptance/api/v1/devise/sessions_spec.rb'
+  download_file 'spec/acceptance/api/devise/invitations_spec.rb'
+  download_file 'spec/acceptance/api/devise/passwords_spec.rb'
+  download_file 'spec/acceptance/api/devise/sessions_spec.rb'
 end
 
 def download_spec_support_directory
@@ -118,6 +120,14 @@ def configure_tests
   download_spec_directory
 
   environment 'config.generators.test_framework = :rspec'
+end
+
+def setup_sweet_staging
+  download_file 'config/initializers/sweet_staging.rb'
+end
+
+def setup_rails_performance
+  download_file 'config/initializers/rails_performance.rb'
 end
 
 def setup_apidocs
@@ -167,17 +177,16 @@ def setup_routes_auth
 end
 
 def setup_controllers_concerns
-  # directory 'app/controllers/concerns'
-
   download_file 'app/controllers/api/devise/invitations_controller.rb'
   download_file 'app/controllers/api/devise/passwords_controller.rb'
   download_file 'app/controllers/api/devise/sessions_controller.rb'
 
   download_file 'app/controllers/api/v1/base_controller.rb'
   download_file 'app/controllers/api/v1/direct_uploads_controller.rb'
+  download_file 'app/controllers/api/base_controller.rb'
 
-  download_file 'app/controllers/api/concerns/authorization.rb'
-  download_file 'app/controllers/api/concerns/error_handler.rb'
+  download_file 'app/controllers/concerns/authorizer.rb'
+  download_file 'app/controllers/concerns/error_handler.rb'
 
   download_file 'app/controllers/apidocs_controller.rb'
   download_file 'app/controllers/development_pages_controller.rb'
@@ -192,7 +201,6 @@ def setup_db
 end
 
 def copy_docker
-  # directory 'nginx'
   download_file 'nginx/staging.conf'
   download_file 'nginx/production.conf'
 
@@ -433,6 +441,8 @@ after_bundle do
   setup_db
   setup_motor_admin
   setup_maintenance_tasks
+  setup_sweet_staging
+  setup_rails_performance
 
   copy_docker
 
