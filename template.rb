@@ -59,7 +59,6 @@ end
 
 def copy_configs
   download_file 'config/initializers/rspec_api_documentation.rb'
-
   download_file 'config/initializers/blueprinter.rb'
   download_file 'config/initializers/devise.rb'
   download_file 'config/initializers/redis.rb'
@@ -83,9 +82,41 @@ def configure_sprockets
   )
 end
 
+def download_spec_acceptance_directory
+  download_file 'spec/acceptance/api/v1/devise/invitations_spec.rb'
+  download_file 'spec/acceptance/api/v1/devise/passwords_spec.rb'
+  download_file 'spec/acceptance/api/v1/devise/sessions_spec.rb'
+end
+
+def download_spec_support_directory
+  download_file 'spec/support/auth.rb'
+  download_file 'spec/support/database_cleaner.rb'
+  download_file 'spec/support/factory_bot.rb'
+  download_file 'spec/support/fakeredis.rb'
+  download_file 'spec/support/form_parameters.rb'
+  download_file 'spec/support/json.rb'
+  download_file 'spec/support/sidekiq.rb'
+  download_file 'spec/support/vcr.rb'
+end
+
+def download_spec_factories_directory
+  download_file 'spec/factories/user.rb'
+end
+
+def download_spec_directory
+  download_file 'spec/rails_helper.rb'
+  download_file 'spec/spec_helper.rb'
+
+  download_spec_acceptance_directory
+  download_spec_factories_directory
+  download_spec_support_directory
+end
+
 def configure_tests
   run 'rspec --init'
-  directory 'spec'
+
+  download_spec_directory
+
   environment 'config.generators.test_framework = :rspec'
 end
 
@@ -136,7 +167,20 @@ def setup_routes_auth
 end
 
 def setup_controllers_concerns
-  directory 'app/controllers/concerns'
+  # directory 'app/controllers/concerns'
+
+  download_file 'app/controllers/api/devise/invitations_controller.rb'
+  download_file 'app/controllers/api/devise/passwords_controller.rb'
+  download_file 'app/controllers/api/devise/sessions_controller.rb'
+
+  download_file 'app/controllers/api/v1/base_controller.rb'
+  download_file 'app/controllers/api/v1/direct_uploads_controller.rb'
+
+  download_file 'app/controllers/api/concerns/authorization.rb'
+  download_file 'app/controllers/api/concerns/error_handler.rb'
+
+  download_file 'app/controllers/apidocs_controller.rb'
+  download_file 'app/controllers/development_pages_controller.rb'
 end
 
 def setup_pundit
@@ -148,7 +192,10 @@ def setup_db
 end
 
 def copy_docker
-  directory 'nginx'
+  # directory 'nginx'
+  download_file 'nginx/staging.conf'
+  download_file 'nginx/production.conf'
+
   download_file 'docker-compose.test.yml'
   download_file 'docker-compose.yml'
   download_file 'docker-entrypoint.sh'
@@ -170,14 +217,35 @@ def configure_xlog
   environment 'config.middleware.use Xlog::Middleware'
 end
 
-def setup_abdi
-  directory 'infrastructure'
+def download_infrastructure_folder
+  download_file 'infrastructure/base_forms/destroy.rb'
 
+  download_file 'infrastructure/base_operations/destroy.rb'
+  download_file 'infrastructure/base_operations/save.rb'
+
+  download_file 'infrastructure/base_action.rb'
+  download_file 'infrastructure/base_form.rb'
+  download_file 'infrastructure/base_operation.rb'
+  download_file 'infrastructure/base_response.rb'
+end
+
+def download_data_folder
   download_file 'data/application_record.rb'
   download_file 'data/current.rb'
-  directory 'data/concerns'
+  download_file 'data/user.rb'
 
-  directory 'business'
+  download_file 'data/concerns/users/temporary_data.rb'
+end
+
+def download_business_folder
+  download_file 'business/users/forms/send_password_restore_email.rb'
+  download_file 'business/users/operations/send_password_restore_email.rb'
+end
+
+def setup_abdi
+  download_business_folder
+  download_data_folder
+  download_infrastructure_folder
 
   insert_into_file(
     'config/application.rb',
@@ -192,8 +260,12 @@ def setup_abdi
 end
 
 def setup_direct_uploads
-  directory 'app/controllers/api/v1/direct_uploads_controller.rb'
-  directory 'app/services/direct_uploads'
+  download_file 'app/controllers/api/v1/direct_uploads_controller.rb'
+
+  download_file 'app/services/direct_uploads/forms/base.rb'
+
+  download_file 'app/services/direct_uploads/operations/create.rb'
+  download_file 'app/services/direct_uploads/operations/destroy.rb'
 end
 
 def setup_active_storage
@@ -201,7 +273,9 @@ def setup_active_storage
 end
 
 def copy_serializers
-  directory 'app/serializers'
+  download_file 'app/serializers/application_serializer.rb'
+  download_file 'app/serializers/blob_serializer.rb'
+  download_file 'app/serializers/user_serializer.rb'
 end
 
 def setup_devise_invitable
