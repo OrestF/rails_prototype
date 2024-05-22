@@ -17,6 +17,9 @@ def add_gems
   gem 'devise_invitable'
   gem 'xlog'
   gem "image_processing"
+  gem 'pundit'
+
+  gem 'file_exists'
 
   gem_group :development, :test do
     gem 'dotenv'
@@ -70,17 +73,22 @@ end
 
 def configure_tests
   run 'rspec --init'
-  copy_file 'config/initializers/rspec_api_documentation.rb'
   directory 'spec'#, force: true
   environment 'config.generators.test_framework = :rspec'
-  rails_command 'generate apitome:install'
+end
 
+def setup_apidocs
+  copy_file 'config/initializers/rspec_api_documentation.rb'
+  rails_command 'generate apitome:install'
   insert_into_file(
     'app/assets/config/manifest.js',
     "//= link apitome/application.css
 //= link apitome/highlight_themes/default.css
 //= link apitome/application.js"
   )
+
+  route "get '/api/docs', to: 'apidocs#index'"
+  copy_file 'app/controllers/apidocs_controller.rb'
 end
 
 def setup_sidekiq
@@ -185,7 +193,6 @@ def setup_active_storage
   rails_command 'active_storage:install'
 end
 
-
 def copy_serializers
   directory 'app/serializers'
 end
@@ -216,18 +223,25 @@ def setup_default_url_options
     'config/environments/development.rb',
     "\n  config.action_mailer.default_url_options = { host: 'localhost', port: 3000 } \n",
     after: 'Rails.application.configure do'
-  )
+  ) # TODO: change to environment
 
   insert_into_file(
     'config/environments/test.rb',
     "\n  config.action_mailer.default_url_options = { host: 'localhost', port: 3000 } \n",
     after: 'Rails.application.configure do'
-  )
+  ) # TODO: change to environment
 
   insert_into_file(
     'config/environment.rb',
     "Rails.application.default_url_options = Rails.application.config.action_mailer.default_url_options"
-  )
+  ) # TODO: change to environment
+end
+
+def setup_home_page
+  copy_file 'app/controllers/development_pages_controller.rb'
+  copy_file 'app/views/development_pages/home.html.erb'
+  copy_file 'app/views/layouts/development_pages.html.erb'
+  route "root to: 'development_pages#home'"
 end
 
 def setup_users
@@ -262,6 +276,30 @@ def cleanup
   remove_dir 'spec/models'
 end
 
+def generate_api_docs
+  run 'rake docs:generate'
+end
+
+def post_setup_message
+  puts ENV['RAILS_ROOT']
+  puts '______________________________________________SETUP YOUR CREDENTIALS_____________________________________________________'
+  jwt_secret_key = SecureRandom.hex(64)
+  puts <<-TEXT
+  1. cd <my_app_name>
+  2. Run: 'EDITOR=nano rails credentials:edit --environment development' and copy-paste the following:
+  
+  admin:
+    username: admin
+    password: superSecureAdminPassword
+  devise:
+    jwt_secret_key: #{jwt_secret_key} 
+  
+  3. To copy development credentials and key for test env, run next commands:
+    cp config/credentials/development.yml.enc config/credentials/test.yml.enc
+    cp config/credentials/development.key config/credentials/test.key
+  TEXT
+end
+
 # Main setup
 source_paths
 
@@ -277,6 +315,7 @@ after_bundle do
   configure_cors
   configure_sprockets
   configure_tests
+  setup_apidocs
   # copy_rubocop
   configure_xlog
 
@@ -286,15 +325,15 @@ after_bundle do
   setup_active_storage
   setup_users
   copy_serializers
+  setup_home_page
 
   setup_db
 
   cleanup
 
-  # git :init
-  # git add: '.'
-  # git commit: %q{ -m 'Initial commit' }
-  puts '______________________________________________FINISH_____________________________________________________'
+  generate_api_docs
+
+  post_setup_message
 end
 
 # TODO

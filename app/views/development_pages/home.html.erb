@@ -1,0 +1,56 @@
+<h1>Welcome to <%= Rails.root.basename.to_s.humanize %> <%= Rails.env %></h1>
+
+<details>
+  <summary>Environments</summary>
+  <p>
+    <ul>
+      <li>Staging</li>
+      <li>
+        <ul>
+          <li><%= link_to('Frontend', '', target: '_blank') %></li>
+          <li><%= link_to('Backend', '', target: '_blank') %></li>
+          <li><%= link_to('Portainer', '', target: '_blank') %></li>
+        </ul>
+      </li>
+      <li>Production</li>
+      <li>
+        <ul>
+          <li><%= link_to('Frontend', '', target: '_blank') %></li>
+          <li><%= link_to('Backend', '', target: '_blank') %></li>
+          <li><%= link_to('Portainer', '', target: '_blank') %></li>
+        </ul>
+      </li>
+    </ul>
+  </p>
+</details>
+
+<details>
+  <summary>Integrations</summary>
+  <p>
+    <ul>
+      <li><%= link_to('Stripe?', '', target: '_blank') %></li>
+    </ul>
+  </p>
+</details>
+
+
+
+<details>
+  <summary>Useful links</summary>
+  <p>
+  <ul>
+    <li><%= link_to('JIRA', '', target: '_blank') %></li>
+  </ul>
+  </p>
+</details>
+
+<hr>
+
+<details>
+  <summary>Actions</summary>
+  <p>
+  <article>
+    <%#= render 'shared/websockets_test' %>
+  </article>
+  </p>
+</details>

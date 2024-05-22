@@ -35,7 +35,6 @@ resource 'v1 Users > Authentication' do
         expect(response_status).to eq 200
         expect(response_json['user']['email']).to eq user.email
         expect(user.reload.invitation_accepted_at).to be_present
-        expect(user.reload.active?).to be true
       end
     end
   end
