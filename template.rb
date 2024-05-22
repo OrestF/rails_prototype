@@ -75,7 +75,7 @@ end
 
 def configure_tests
   run 'rspec --init'
-  directory 'spec'#, force: true
+  directory 'spec'
   environment 'config.generators.test_framework = :rspec'
 end
 
@@ -125,37 +125,35 @@ def setup_routes_auth
   )
 end
 
-def stop_spring
-  run 'spring stop'
+def setup_controllers_concerns
+  directory 'app/controllers/concerns'
 end
 
-# TODO: outdated
-# def copy_rubocop
-#   copy_file '.rubocop.yml'
-# end
+def setup_pundit
+  generate 'pundit:install'
+end
 
 def setup_db
   rails_command 'db:prepare'
 end
 
-# TODO: outdated
-# def copy_docker
-#   directory 'docker'
-#   copy_file 'docker-compose.yml'
-#   copy_file 'docker-compose.development.yml'
-# end
-
-# TODO: outdated
-# def copy_env
-#   copy_file '.env'
-#   copy_file '.env.development'
-# end
+def copy_docker
+  directory 'nginx'
+  copy_file 'docker-compose.test.yml'
+  copy_file 'docker-compose.yml'
+  copy_file 'docker-entrypoint.sh'
+  copy_file 'docker-entrypoint.test.sh'
+  copy_file 'docker-entrypoint-anycable.sh'
+  copy_file 'docker-entrypoint-sidekiq.sh'
+  copy_file 'Dockerfile'
+  copy_file '.env.example', '.env'
+end
 
 def copy_docs
   copy_file 'README_EXAMPLE.md', 'README.md'
   copy_file 'CHANGELOG_EXAMPLE.md', 'CHANGELOG.md'
   copy_file 'lemme_check_remote.sh'
-  # empty_directory 'doc'
+  empty_directory '.docs'
 end
 
 def configure_xlog
@@ -169,10 +167,7 @@ def setup_abdi
   copy_file 'data/current.rb'
   directory 'data/concerns'
 
-  # directory 'data'
   directory 'business'
-
-  # remove_dir 'app/models'
 
   insert_into_file(
     'config/application.rb',
@@ -221,22 +216,13 @@ def setup_devise
 end
 
 def setup_default_url_options
-  insert_into_file(
-    'config/environments/development.rb',
-    "\n  config.action_mailer.default_url_options = { host: 'localhost', port: 3000 } \n",
-    after: 'Rails.application.configure do'
-  ) # TODO: change to environment
-
-  insert_into_file(
-    'config/environments/test.rb',
-    "\n  config.action_mailer.default_url_options = { host: 'localhost', port: 3000 } \n",
-    after: 'Rails.application.configure do'
-  ) # TODO: change to environment
+  environment 'config.action_mailer.default_url_options = { host: "localhost", port: 3000 }', env: 'development'
+  environment 'config.action_mailer.default_url_options = { host: "localhost", port: 3000 }', env: 'test'
 
   insert_into_file(
     'config/environment.rb',
     "Rails.application.default_url_options = Rails.application.config.action_mailer.default_url_options"
-  ) # TODO: change to environment
+  )
 end
 
 def setup_home_page
@@ -279,7 +265,7 @@ def cleanup
 end
 
 def generate_api_docs
-  run 'rake docs:generate'
+  run 'rake docs:generate RAILS_ENV=test'
 end
 
 def setup_motor_admin
@@ -305,8 +291,7 @@ def setup_maintenance_tasks
 end
 
 def post_setup_message
-  puts ENV['RAILS_ROOT']
-  puts '______________________________________________SETUP YOUR CREDENTIALS_____________________________________________________'
+  puts '______________________________________________SETUP CREDENTIALS_____________________________________________________'
   jwt_secret_key = SecureRandom.hex(64)
   puts <<-TEXT
   1. cd <my_app_name>
@@ -340,16 +325,16 @@ add_gems
 
 after_bundle do
   puts '______________________________________________AFTER_BUNDLE_____________________________________________________'
-  # stop_spring
 
   copy_configs
+  setup_controllers_concerns
+  setup_pundit
   setup_routes_auth
   setup_sidekiq
   configure_cors
   configure_sprockets
   configure_tests
   setup_apidocs
-  # copy_rubocop
   configure_xlog
 
   setup_abdi
@@ -364,15 +349,11 @@ after_bundle do
   setup_motor_admin
   setup_maintenance_tasks
 
+  copy_docker
+
   cleanup
 
   generate_api_docs
 
   post_setup_message
 end
-
-# TODO
-# RCreds.fetch(:devise, :jwt_secret_key)
-# RCreds.fetch(:admin, :username)
-# RCreds.fetch(:admin, :password)
-#

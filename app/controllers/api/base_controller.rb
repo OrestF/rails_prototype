@@ -7,7 +7,7 @@ class Api::BaseController < ApplicationController
 
   respond_to :json
 
-  # before_action :prepare_exception_notifier
+  # before_action :prepare_exception_notifier # TODO: add
   prepend_before_action :authenticate_user!
   include Authorizer
 

@@ -1,65 +1,207 @@
-version: '3'
+version: '3.4'
+
+services:
+  postgres:
+    container_name: ${APP_NAME}_postgres
+    image: postgres:${POSTGRES_VERSION}
+    restart: always
+    networks:
+      - app-net
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    env_file: stack.env
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}' ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - all
+      - cicd
+      - staging
+
+#  elasticsearch:
+#    container_name: ${APP_NAME}_elasticsearch
+#    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
+#    restart: always
+#    volumes:
+#      - elasticsearch_data:/usr/share/elasticsearch/data
+#    networks:
+#      - app-net
+#    ports:
+#      - "9200:9200"
+#      - "9300:9300"
+#    env_file: stack.env
+#    environment:
+#      - discovery.type=single-node
+#      - bootstrap.memory_lock=true
+#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+#    profiles:
+#      - all
+#      - cicd
+#      - staging
+
+  redis:
+    container_name: ${APP_NAME}_redis
+    image: redis:${REDIS_VERSION}
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-net
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - all
+      - cicd
+      - staging
+
+  rails: &rails
+    container_name: ${APP_NAME}_rails
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${APP_NAME}_rails
+    env_file: stack.env
+    volumes:
+      - '.:/var/www/${APP_NAME}'
+    networks:
+      - app-net
+    ports:
+      - "3000:3000"
+    #    entrypoint: ./docker-entrypoint.sh
+    # For using pry
+    stdin_open: true
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+    tty: true
+    profiles:
+      - all
+
+  rails_server:
+    <<: *rails
+    image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-region: "${AWS_REGION}"
+        awslogs-group: "${APP_NAME}-${COMPOSE_PROFILES}-rails"
+        awslogs-datetime-format: '\[%b %d, %Y %H:%M:%S\]'
+        tag: "{{.Name}}/{{.ID}}"
+        awslogs-create-group: "true"
+    depends_on: {}
+    profiles:
+      - production
+      - preprod
+      - staging
+
+  sidekiq: &sidekiq
+    <<: *rails
+    image: ${APP_NAME}_rails
+    container_name: ${APP_NAME}_sidekiq
+    restart: always
+    ports: []
+    entrypoint: ./docker-entrypoint-sidekiq.sh
+    profiles:
+      - all
+
+  sidekiq_server:
+    <<: *sidekiq
+    image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-region: "${AWS_REGION}"
+        awslogs-group: "${APP_NAME}-${COMPOSE_PROFILES}-rails"
+        awslogs-datetime-format: '\[%b %d, %Y %H:%M:%S\]'
+        tag: "{{.Name}}/{{.ID}}"
+        awslogs-create-group: "true"
+    depends_on: {}
+    profiles:
+      - production
+      - preprod
+      - staging
+
+#  ws:
+#    container_name: ${APP_NAME}_ws
+#    image: anycable/anycable-go:1.2
+#    ports:
+#      - '8081:8080'
+#    environment:
+#      ANYCABLE_HOST: 0.0.0.0
+#      ANYCABLE_REDIS_URL: ${REDIS_URL}
+#      ANYCABLE_RPC_HOST: ${ANYCABLE_RPC_HOST}
+#      ANYCABLE_DEBUG: 1
+#    networks:
+#      - app-net
+#    profiles:
+#      - all
+#      - staging
+#      - preprod
+#      - production
+#
+#  anycable: &anycable
+#    <<: *rails
+#    image: ${APP_NAME}_rails
+#    container_name: ${APP_NAME}_anycable
+#    entrypoint: ./docker-entrypoint-anycable.sh
+#    environment:
+#      ANYCABLE_REDIS_URL: ${REDIS_URL}
+#      ANYCABLE_RPC_HOST: 0.0.0.0:50051
+#      ANYCABLE_DEBUG: 1
+#      ACTION_CABLE_ADAPTER: any_cable
+#    networks:
+#      - app-net
+#    ports:
+#      - '50051:50051'
+#    profiles:
+#      - all
+#
+#  anycable_server:
+#    <<: *anycable
+#    image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
+#    profiles:
+#      - production
+#      - preprod
+#      - staging
+
+  nginx:
+    container_name: nginx
+    image: nginx:1.22.1
+    restart: always
+    healthcheck:
+      test: curl -sS http://127.0.0.1:443 || echo 1
+      interval: 5s
+      timeout: 10s
+      retries: 3
+    ports:
+      - 80:80
+      - 443:443
+    env_file:
+      - stack.env
+    volumes:
+      - /home/deployer/app/nginx/preprod.conf:/etc/nginx/conf.d/preprod.conf
+      - /home/deployer/app/nginx/certs/fullchain.pem:/etc/nginx/fullchain.pem
+      - /home/deployer/app/nginx/certs/privkey.pem:/etc/nginx/privkey.pem
+    profiles:
+      - preprod
 
 # To access data postgres writes within container from host machine
 volumes:
   postgres_data: {}
+  redis_data: {}
+  elasticsearch_data: {}
 
-services:
-  db:
-    image: postgres:11-alpine
-    restart: always
-    environment:
-      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432"
-    # For using pry
-    stdin_open: true
-    tty: true
-
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6380"
-
-  app:
-    build:
-      context: .
-      dockerfile: ./docker/app/Dockerfile
-    env_file:
-      - .env
-    volumes:
-      - .:/var/www/app
-    depends_on:
-      - db
-      - redis
-    ports:
-      - "3000:3000"
-    # For using pry
-    stdin_open: true
-    tty: true
-
-  sidekiq:
-    build:
-      context: .
-      dockerfile: ./docker/app/Dockerfile
-    env_file:
-      - .env
-    depends_on:
-      - db
-      - redis
-    command: bundle exec sidekiq
-
-  web:
-    build:
-      context: .
-      dockerfile: ./docker/web/Dockerfile
-      args:
-        RAILS_ENV: $RAILS_ENV
-
-    depends_on:
-      - app
-
-    ports:
-      - 80:80
+networks:
+  app-net:
+    name: app-net

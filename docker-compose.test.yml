@@ -1,0 +1,13 @@
+# Run tests in Docker
+# docker compose --env-file stack.env -f docker-compose.yml -f docker-compose.test.yml --profile=test up --build --abort-on-container-exit --exit-code-from rails rails
+
+# INFO: this file is NOT required by docker_ci.yml workflow. This is only for local development.
+
+version: '3.4'
+services:
+  rails:
+    extends:
+      file: docker-compose.yml
+      service: rails
+    entrypoint: ./docker-entrypoint.test.sh
+    env_file: .env.test
