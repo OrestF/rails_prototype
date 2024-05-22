@@ -20,6 +20,8 @@ def add_gems
   gem 'pundit'
 
   gem 'file_exists'
+  gem 'motor-admin'
+  gem 'maintenance_tasks'
 
   gem_group :development, :test do
     gem 'dotenv'
@@ -280,23 +282,54 @@ def generate_api_docs
   run 'rake docs:generate'
 end
 
+def setup_motor_admin
+  rails_command 'motor:install'
+  rails_command 'db:migrate'
+
+  puts <<-TEXT
+  IMPORTANT!
+  In order to secure MotorAdmin, you need to specify environment variables on your servers:
+  MOTOR_AUTH_USERNAME
+  MOTOR_AUTH_PASSWORD
+  TEXT
+end
+
+def setup_maintenance_tasks
+  generate 'maintenance_tasks:install'
+
+  insert_into_file(
+    'config/routes.rb',
+    "\n  mount with_admin_auth.call(MaintenanceTasks::Engine), at: '/maintenance_tasks'\n\n",
+    after: 'get "up" => "rails/health#show", as: :rails_health_check'
+  )
+end
+
 def post_setup_message
   puts ENV['RAILS_ROOT']
   puts '______________________________________________SETUP YOUR CREDENTIALS_____________________________________________________'
   jwt_secret_key = SecureRandom.hex(64)
   puts <<-TEXT
   1. cd <my_app_name>
-  2. Run: 'EDITOR=nano rails credentials:edit --environment development' and copy-paste the following:
+  2. Setup development credentials:
+    EDITOR=nano rails credentials:edit --environment development
   
-  admin:
-    username: admin
-    password: superSecureAdminPassword
-  devise:
-    jwt_secret_key: #{jwt_secret_key} 
+admin:
+  username: admin
+  password: superSecureAdminPassword
+devise:
+  jwt_secret_key: #{jwt_secret_key} 
   
   3. To copy development credentials and key for test env, run next commands:
     cp config/credentials/development.yml.enc config/credentials/test.yml.enc
     cp config/credentials/development.key config/credentials/test.key
+  TEXT
+
+  puts '______________________________________________MOTOR ADMIN_____________________________________________________'
+  puts <<-TEXT
+  IMPORTANT!
+  In order to secure MotorAdmin, you need to specify environment variables on your servers:
+  MOTOR_AUTH_USERNAME
+  MOTOR_AUTH_PASSWORD
   TEXT
 end
 
@@ -328,6 +361,8 @@ after_bundle do
   setup_home_page
 
   setup_db
+  setup_motor_admin
+  setup_maintenance_tasks
 
   cleanup
 
