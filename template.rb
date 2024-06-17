@@ -417,8 +417,6 @@ source_paths
 add_gems
 
 after_bundle do
-  puts '______________________________________________AFTER_BUNDLE_____________________________________________________'
-
   copy_configs
   setup_controllers_concerns
   setup_pundit
