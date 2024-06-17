@@ -5,9 +5,14 @@ def source_paths
   [File.expand_path(__dir__)]
 end
 
-def download_file(from_path, to_path = from_path)
-  base_url = 'https://raw.githubusercontent.com/OrestF/rails_prototype/rails_api'
-  get([base_url, from_path].join('/'), to_path)
+def download_file(from_path, to_path = from_path, development: false)
+  if development
+    # for local development and upgrades
+    copy_file from_path, to_path
+  else
+    base_url = 'https://raw.githubusercontent.com/OrestF/rails_prototype/rails_api'
+    get([base_url, from_path].join('/'), to_path)
+  end
 end
 
 def add_gems
@@ -87,6 +92,7 @@ end
 def download_spec_acceptance_directory
   download_file 'spec/acceptance/api/devise/invitations_spec.rb'
   download_file 'spec/acceptance/api/devise/passwords_spec.rb'
+  download_file 'spec/acceptance/api/devise/registrations_spec.rb'
   download_file 'spec/acceptance/api/devise/sessions_spec.rb'
 end
 
@@ -334,8 +340,8 @@ def setup_users
   download_file 'app/controllers/api/devise/invitations_controller.rb'
   download_file 'app/controllers/api/devise/sessions_controller.rb'
   download_file 'app/controllers/api/devise/passwords_controller.rb'
+  download_file 'app/controllers/api/devise/registrations_controller.rb'
   # TODO: add confirmations_controller.rb
-  # TODO: add registrations_controller.rb
 
   download_file 'business/users/operations/send_password_restore_email.rb'
   download_file 'business/users/forms/send_password_restore_email.rb'
@@ -347,6 +353,7 @@ def setup_users
                  path: '/api/v1/users/',
                  controllers: { sessions: 'api/devise/sessions',
                                 passwords: 'api/devise/passwords',
+                                registrations: 'api/devise/registrations',
                                 invitations: 'api/devise/invitations' }
     end\n"
 end
@@ -354,7 +361,7 @@ end
 def cleanup
   remove_dir 'app/models'
   remove_dir 'spec/models'
-  remove_dir 'setup_temp_files'
+  # remove_dir 'setup_temp_files'
 end
 
 def generate_api_docs
