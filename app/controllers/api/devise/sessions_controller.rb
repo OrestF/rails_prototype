@@ -7,9 +7,9 @@ class Api::Devise::SessionsController < Devise::SessionsController
   respond_to :json
 
   def create
-    super do |resource|
-      return record_response(resource, view: :sign_in, jwt_token: current_token)
-    end
+    res = super
+
+    record_response(res, view: :sign_in, jwt_token: current_token)
   end
 
   private

@@ -5,8 +5,9 @@ def source_paths
   [File.expand_path(__dir__)]
 end
 
-def download_file(from_path, to_path = from_path, development: false)
-  if development
+def download_file(from_path, to_path = from_path)
+  if ENV['DEV_MODE']
+    puts '____________________________________________________________________________________________________________________________INTS DEVELOPMENT MODE____________________________________________________________________________________________________________________________'
     # for local development and upgrades
     copy_file from_path, to_path
   else
@@ -23,7 +24,8 @@ def add_gems
   gem 'pagy'
   gem 'readymade'
   gem 'api-pagination'
-  gem 'apitome'
+  # gem 'apitome'
+  gem 'sprockets-rails', :require => 'sprockets/railtie'
   gem 'rack-cors'
   gem 'rspec_api_documentation'
   gem 'devise-jwt'
@@ -31,6 +33,7 @@ def add_gems
   gem 'xlog'
   gem "image_processing"
   gem 'pundit'
+  gem 'passpartu'
 
   gem 'file_exists'
   gem 'motor-admin'
@@ -65,11 +68,12 @@ def add_gems
 end
 
 def copy_configs
-  download_file 'config/initializers/rspec_api_documentation.rb'
   download_file 'config/initializers/blueprinter.rb'
   download_file 'config/initializers/devise.rb'
+  download_file 'business/permissions.yml'
+  download_file 'config/initializers/passpartu.rb'
   download_file 'config/initializers/redis.rb'
-  download_file 'config/initializers/rspec_api_documentation.rb'
+  # download_file 'config/initializers/rspec_api_documentation.rb'
 end
 
 def configure_cors
@@ -94,6 +98,8 @@ def download_spec_acceptance_directory
   download_file 'spec/acceptance/api/devise/passwords_spec.rb'
   download_file 'spec/acceptance/api/devise/registrations_spec.rb'
   download_file 'spec/acceptance/api/devise/sessions_spec.rb'
+
+  download_file 'spec/acceptance/api/v1/users_spec.rb'
 end
 
 def download_spec_support_directory
@@ -137,7 +143,8 @@ def setup_rails_performance
 end
 
 def setup_apidocs
-  download_file 'config/initializers/rspec_api_documentation.rb'
+  # download_file 'config/initializers/rspec_api_documentation.rb'
+  download_file 'app/assets/config/manifest.js'
   rails_command 'generate apitome:install'
   insert_into_file(
     'app/assets/config/manifest.js',
@@ -182,7 +189,7 @@ def setup_routes_auth
   )
 end
 
-def setup_controllers_concerns
+def setup_controllers
   download_file 'app/controllers/api/devise/invitations_controller.rb'
   download_file 'app/controllers/api/devise/passwords_controller.rb'
   download_file 'app/controllers/api/devise/sessions_controller.rb'
@@ -199,7 +206,9 @@ def setup_controllers_concerns
 end
 
 def setup_pundit
+  download_file 'app/assets/config/manifest.js' # fix
   generate 'pundit:install'
+  download_file 'app/policies/application_policy.rb'
 end
 
 def setup_db
@@ -241,6 +250,12 @@ def download_infrastructure_folder
   download_file 'infrastructure/base_form.rb'
   download_file 'infrastructure/base_operation.rb'
   download_file 'infrastructure/base_response.rb'
+  download_file 'infrastructure/blueprint_policy_extractor.rb'
+end
+
+def download_policies_folder
+  download_file 'app/policies/application_policy.rb'
+  download_file 'app/policies/user_policy.rb'
 end
 
 def download_data_folder
@@ -253,7 +268,12 @@ end
 
 def download_business_folder
   download_file 'business/users/forms/send_password_restore_email.rb'
+  download_file 'business/users/forms/update.rb'
+
   download_file 'business/users/operations/send_password_restore_email.rb'
+  download_file 'business/users/operations/update.rb'
+
+  download_file 'business/permissions.yml'
 end
 
 def setup_abdi
@@ -311,11 +331,15 @@ def setup_devise
   setup_devise_jti_strategy
   setup_devise_invitable
   setup_devise_lockable
+
+  download_file 'config/initializers/devise.rb'
 end
 
 def setup_default_url_options
   environment 'config.action_mailer.default_url_options = { host: "localhost", port: 3000 }', env: 'development'
   environment 'config.action_mailer.default_url_options = { host: "localhost", port: 3000 }', env: 'test'
+  environment 'config.action_controller.raise_on_missing_callback_actions = false', env: 'development'
+  environment 'config.action_controller.raise_on_missing_callback_actions = false', env: 'test'
 
   insert_into_file(
     'config/environment.rb',
@@ -341,6 +365,8 @@ def setup_users
   download_file 'app/controllers/api/devise/sessions_controller.rb'
   download_file 'app/controllers/api/devise/passwords_controller.rb'
   download_file 'app/controllers/api/devise/registrations_controller.rb'
+
+  download_file 'app/controllers/api/v1/users_controller.rb' # TODO: refactor files copying
   # TODO: add confirmations_controller.rb
 
   download_file 'business/users/operations/send_password_restore_email.rb'
@@ -355,7 +381,18 @@ def setup_users
                                 passwords: 'api/devise/passwords',
                                 registrations: 'api/devise/registrations',
                                 invitations: 'api/devise/invitations' }
-    end\n"
+    end
+
+namespace :api, defaults: { format: :json } do
+    namespace :v1 do
+      resources :users, only: %i[] do
+        collection do
+          get :profile
+          patch :profile, to: 'users#update_profile'
+        end
+      end
+    end
+  end\n"
 end
 
 def cleanup
@@ -425,14 +462,15 @@ add_gems
 
 after_bundle do
   copy_configs
-  setup_controllers_concerns
+  setup_controllers
   setup_pundit
+  download_policies_folder
   setup_routes_auth
   setup_sidekiq
   configure_cors
   configure_sprockets
   configure_tests
-  setup_apidocs
+  # setup_apidocs
   configure_xlog
 
   setup_abdi
@@ -453,7 +491,9 @@ after_bundle do
 
   cleanup
 
-  generate_api_docs
+  # generate_api_docs # TODO: uncomment
+
+  setup_default_url_options
 
   post_setup_message
 end
