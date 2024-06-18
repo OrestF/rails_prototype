@@ -23,7 +23,7 @@ def add_gems
   gem 'pagy'
   gem 'readymade'
   gem 'api-pagination'
-  # gem 'apitome'
+  gem 'apitome'
   gem 'sprockets-rails', :require => 'sprockets/railtie'
   gem 'rack-cors'
   gem 'rspec_api_documentation'
