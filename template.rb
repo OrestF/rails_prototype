@@ -72,6 +72,7 @@ def copy_configs
   download_file 'business/permissions.yml'
   download_file 'config/initializers/passpartu.rb'
   download_file 'config/initializers/redis.rb'
+  download_file 'config/initializers/flash.rb'
   download_file 'config/initializers/oj.rb'
   download_file 'config/initializers/disable_raise_on_missing_callbacks.rb'
   # download_file 'config/initializers/rspec_api_documentation.rb'
@@ -141,6 +142,13 @@ end
 
 def setup_rails_performance
   download_file 'config/initializers/rails_performance.rb'
+end
+
+def download_assets_directory
+  download_file 'app/assets/config/manifest.js'
+  download_file 'app/assets/images/.keep'
+  download_file 'app/assets/javascripts/.keep'
+  download_file 'app/assets/stylesheets/.keep'
 end
 
 def setup_apidocs
@@ -469,6 +477,7 @@ after_bundle do
   setup_sidekiq
   configure_cors
   configure_sprockets
+  download_assets_directory
   configure_tests
   setup_apidocs
   configure_xlog
