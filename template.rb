@@ -7,7 +7,6 @@ end
 
 def download_file(from_path, to_path = from_path)
   if ENV['DEV_MODE']
-    puts '____________________________________________________________________________________________________________________________INTS DEVELOPMENT MODE____________________________________________________________________________________________________________________________'
     # for local development and upgrades
     copy_file from_path, to_path
   else
@@ -73,6 +72,8 @@ def copy_configs
   download_file 'business/permissions.yml'
   download_file 'config/initializers/passpartu.rb'
   download_file 'config/initializers/redis.rb'
+  download_file 'config/initializers/oj.rb'
+  download_file 'config/initializers/disable_raise_on_missing_callbacks.rb'
   # download_file 'config/initializers/rspec_api_documentation.rb'
 end
 
@@ -143,7 +144,7 @@ def setup_rails_performance
 end
 
 def setup_apidocs
-  # download_file 'config/initializers/rspec_api_documentation.rb'
+  download_file 'config/initializers/rspec_api_documentation.rb'
   download_file 'app/assets/config/manifest.js'
   rails_command 'generate apitome:install'
   insert_into_file(
@@ -398,7 +399,6 @@ end
 def cleanup
   remove_dir 'app/models'
   remove_dir 'spec/models'
-  # remove_dir 'setup_temp_files'
 end
 
 def generate_api_docs
@@ -470,7 +470,7 @@ after_bundle do
   configure_cors
   configure_sprockets
   configure_tests
-  # setup_apidocs
+  setup_apidocs
   configure_xlog
 
   setup_abdi
@@ -491,7 +491,7 @@ after_bundle do
 
   cleanup
 
-  # generate_api_docs # TODO: uncomment
+  # generate_api_docs # optional
 
   setup_default_url_options
 

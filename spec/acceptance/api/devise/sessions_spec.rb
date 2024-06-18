@@ -6,8 +6,6 @@ resource 'v1 Users > Authentication' do
   let!(:user) { create(:user, password: 'correct_password') }
 
   post '/api/v1/users/sign_in' do
-    let(:raw_post) { params.to_json }
-
     with_options scope: :user, required: true do
       parameter :email
       parameter :password
@@ -37,6 +35,8 @@ resource 'v1 Users > Authentication' do
         expect(response_status).to eq 401
       end
     end
+
+    let(:raw_post) { params.to_json }
   end
 
   delete '/api/v1/users/sign_out' do

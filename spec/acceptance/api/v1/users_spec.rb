@@ -33,7 +33,7 @@ resource 'v1 Users' do
 
       it 'PATCH profile' do
         do_request
-        byebug
+
         expect(response_status).to eq(200)
       end
     end

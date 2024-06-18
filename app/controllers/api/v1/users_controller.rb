@@ -6,7 +6,6 @@ class Api::V1::UsersController < Api::V1::BaseController
   def profile
     authorize current_user
 
-    byebug
     record_response(current_user, root: :user, view: :full)
   end
 
