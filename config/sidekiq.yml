@@ -1,0 +1,22 @@
+---
+:verbose: false
+:concurrency: 5
+:timeout: 25
+
+:queues:
+  - critical
+  - default
+  - searchkick
+  - notifications
+  - active_storage_analysis
+  - active_storage_purge
+  - low
+
+production:
+  :concurrency: 5
+
+preprod:
+  :concurrency: 5
+
+staging:
+  :concurrency: 5

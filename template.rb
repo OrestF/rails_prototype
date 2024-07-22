@@ -75,6 +75,7 @@ def copy_configs
   download_file 'config/initializers/flash.rb'
   download_file 'config/initializers/oj.rb'
   download_file 'config/initializers/disable_raise_on_missing_callbacks.rb'
+  download_file 'config/sidekiq.yml'
   # download_file 'config/initializers/rspec_api_documentation.rb'
 end
 
