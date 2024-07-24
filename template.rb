@@ -40,6 +40,9 @@ def add_gems
   gem 'sweet_staging'
   gem 'rails_performance'
 
+  gem 'elasticsearch'
+  gem 'searchkick'
+
   gem_group :development, :test do
     # gem 'dotenv'
     gem 'byebug'
@@ -71,9 +74,11 @@ def copy_configs
   download_file 'config/initializers/devise.rb'
   download_file 'business/permissions.yml'
   download_file 'config/initializers/passpartu.rb'
+  download_file 'config/initializers/r_creds.rb'
   download_file 'config/initializers/redis.rb'
   download_file 'config/initializers/flash.rb'
   download_file 'config/initializers/oj.rb'
+  download_file 'config/initializers/searchkick.rb'
   download_file 'config/initializers/disable_raise_on_missing_callbacks.rb'
   download_file 'config/sidekiq.yml'
   # download_file 'config/initializers/rspec_api_documentation.rb'
@@ -112,6 +117,7 @@ def download_spec_support_directory
   download_file 'spec/support/fakeredis.rb'
   download_file 'spec/support/form_parameters.rb'
   download_file 'spec/support/json.rb'
+  download_file 'spec/support/search.rb'
   download_file 'spec/support/sidekiq.rb'
   download_file 'spec/support/vcr.rb'
 end
@@ -260,6 +266,7 @@ def download_infrastructure_folder
   download_file 'infrastructure/base_form.rb'
   download_file 'infrastructure/base_operation.rb'
   download_file 'infrastructure/base_response.rb'
+  download_file 'infrastructure/base_search.rb'
   download_file 'infrastructure/blueprint_policy_extractor.rb'
 end
 
@@ -274,6 +281,8 @@ def download_data_folder
   download_file 'data/user.rb'
 
   download_file 'data/concerns/users/temporary_data.rb'
+  download_file 'data/concerns/users/searchable.rb'
+  download_file 'data/concerns/searchable.rb'
 end
 
 def download_business_folder
@@ -307,16 +316,23 @@ def setup_direct_uploads
   download_file 'app/controllers/api/v1/direct_uploads_controller.rb'
 
   download_file 'app/services/direct_uploads/forms/base.rb'
-
   download_file 'app/services/direct_uploads/operations/create.rb'
   download_file 'app/services/direct_uploads/operations/destroy.rb'
+end
+
+def download_services_folder
+  # download_file 'app/services/direct_uploads/forms/base.rb'
+  # download_file 'app/services/direct_uploads/operations/create.rb'
+  # download_file 'app/services/direct_uploads/operations/destroy.rb'
+
+  download_file 'app/services/search/users.rb'
 end
 
 def setup_active_storage
   rails_command 'active_storage:install'
 end
 
-def copy_serializers
+def download_serializers_folder
   download_file 'app/serializers/application_serializer.rb'
   download_file 'app/serializers/blob_serializer.rb'
   download_file 'app/serializers/user_serializer.rb'
@@ -488,7 +504,8 @@ after_bundle do
   copy_docs
   setup_active_storage
   setup_users
-  copy_serializers
+  download_serializers_folder
+  download_services_folder
   setup_home_page
 
   setup_db

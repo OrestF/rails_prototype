@@ -22,26 +22,26 @@ services:
       - cicd
       - staging
 
-#  elasticsearch:
-#    container_name: ${APP_NAME}_elasticsearch
-#    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
-#    restart: always
-#    volumes:
-#      - elasticsearch_data:/usr/share/elasticsearch/data
-#    networks:
-#      - app-net
-#    ports:
-#      - "9200:9200"
-#      - "9300:9300"
-#    env_file: stack.env
-#    environment:
-#      - discovery.type=single-node
-#      - bootstrap.memory_lock=true
-#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-#    profiles:
-#      - all
-#      - cicd
-#      - staging
+  elasticsearch:
+    container_name: ${APP_NAME}_elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
+    restart: always
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - app-net
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    env_file: stack.env
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    profiles:
+      - all
+      - cicd
+      - staging
 
   redis:
     container_name: ${APP_NAME}_redis
