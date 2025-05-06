@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class Api::BaseController < ApplicationController
+class Api::BaseController < ActionController::API
   include Readymade::Controller::Serialization
   include Pagy::Backend
   include ErrorHandler
