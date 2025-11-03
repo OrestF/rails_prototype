@@ -1,6 +1,8 @@
 require 'uri'
 require 'open-uri'
 
+# DEV_MODE=true rails new drt_be_api --database=postgresql --css=tailwind --skip-javascript --skip-sprockets --template="rails_prototype/template.rb" --skip-kamal
+
 # TODO: add business specs foe existing operations
 def source_paths
   [File.expand_path(__dir__)]
@@ -45,6 +47,8 @@ def add_gems
 
   gem 'elasticsearch'
   gem 'searchkick'
+
+  gem "mission_control-jobs"
 
   gem_group :development, :test do
     # gem 'dotenv'

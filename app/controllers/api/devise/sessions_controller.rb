@@ -7,8 +7,8 @@ class Api::Devise::SessionsController < Devise::SessionsController
   respond_to :json
 
   def create
-    # some strange error possible with the warden.authenticate! method and rspec_api_documentation
-    begin super; rescue NoMethodError => _e; end
+    # uncomment if some strange error possible with the warden.authenticate! method and rspec_api_documentation
+    # begin super; rescue NoMethodError => _e; end
 
     super do |resource|
       return record_response(resource, view: :sign_in, jwt_token: current_token)
