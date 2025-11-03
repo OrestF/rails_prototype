@@ -16,6 +16,12 @@ module RspecApiDocumentation
     end
   end
 
+  module DSL
+    def fixture_path=(_path)
+      # compability with rspec_api_documentation
+    end
+  end
+
   class RackTestClient < ClientBase
     def response_body
       if %w[json csv].any? { |f| last_response.headers['Content-Type'].to_s.include?(f) }

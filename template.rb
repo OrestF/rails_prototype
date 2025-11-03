@@ -1,7 +1,7 @@
 require 'uri'
 require 'open-uri'
 
-# DEV_MODE=true rails new drt_be_api --database=postgresql --css=tailwind --skip-javascript --skip-sprockets --template="rails_prototype/template.rb" --skip-kamal
+# DEV_MODE=true rails new rvmd --database=postgresql --css=tailwind --skip-javascript --skip-sprockets --template="rails_prototype/template.rb" --skip-kamal
 
 # TODO: add business specs foe existing operations
 def source_paths
@@ -35,7 +35,7 @@ def add_gems
   gem 'devise-jwt'
   gem 'devise_invitable'
   gem 'xlog'
-  gem "image_processing"
+  # gem "image_processing"
   gem 'pundit'
   gem 'passpartu'
 
@@ -197,6 +197,14 @@ end
 #   )
 # end
 
+def setup_solid_queue
+  route "\n  mount MissionControl::Jobs::Engine, at: '/jobs'\n\n"
+
+  # TODO: Setup mission control jobs initializer
+  # rails mission_control:jobs:authentication:configure
+  # rails_command 'mission_control:jobs:authentication:configure'
+end
+
 def setup_routes_auth
   insert_into_file(
     'config/routes.rb',
@@ -248,6 +256,7 @@ def copy_docker
   download_file 'docker-entrypoint.sh'
   download_file 'docker-entrypoint.test.sh'
   download_file 'docker-entrypoint-anycable.sh'
+  download_file 'docker-entrypoint-jobs.sh'
   # download_file 'docker-entrypoint-sidekiq.sh'
   download_file 'Dockerfile'
   download_file '.env.example', '.env'

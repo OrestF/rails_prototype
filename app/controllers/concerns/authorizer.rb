@@ -6,7 +6,16 @@ module Authorizer
   include Pundit::Authorization
 
   included do
-    before_action :verify_record, except: %i[index new create]
+    # Get controller's public instance methods
+    available_actions = instance_methods(false).map(&:to_sym)
+
+    # Define default excluded actions
+    default_excepts = %i[index new create]
+
+    # Filter only existing actions
+    safe_excepts = default_excepts & available_actions
+
+    before_action :verify_record, except: safe_excepts
     before_action :verify_class
 
     after_action :verify_pundit_authorization
