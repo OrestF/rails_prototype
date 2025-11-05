@@ -167,8 +167,10 @@ def download_assets_directory
 end
 
 def setup_apidocs
+  download_file 'config/initializers/apitome.rb'
   download_file 'config/initializers/rspec_api_documentation.rb'
   download_file 'app/assets/config/manifest.js'
+  download_file 'view/layouts/apitome/application.html.erb'
   rails_command 'generate apitome:install'
   insert_into_file(
     'app/assets/config/manifest.js',
