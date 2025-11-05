@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require 'blueprinter/extractors/auto_extractor'
 
 class BlueprintPolicyExtractor < Blueprinter::AutoExtractor
   # validate each association to be within policy scope

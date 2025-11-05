@@ -1,6 +1,9 @@
 require 'uri'
 require 'open-uri'
 
+# DEV_MODE=true rails new rvmd --database=postgresql --css=tailwind --skip-javascript --skip-sprockets --template="rails_prototype/template.rb" --skip-kamal
+
+# TODO: add business specs foe existing operations
 def source_paths
   [File.expand_path(__dir__)]
 end
@@ -16,7 +19,9 @@ def download_file(from_path, to_path = from_path)
 end
 
 def add_gems
-  gem 'sidekiq'
+  # gem 'sidekiq'
+  # gem 'sidekiq-cron'
+  # gem 'sidekiq-failures'
   gem 'r_creds'
   gem 'oj'
   gem 'blueprinter'
@@ -24,13 +29,13 @@ def add_gems
   gem 'readymade'
   gem 'api-pagination'
   gem 'apitome'
-  gem 'sprockets-rails', :require => 'sprockets/railtie'
+  # gem 'sprockets-rails', :require => 'sprockets/railtie'
   gem 'rack-cors'
   gem 'rspec_api_documentation'
   gem 'devise-jwt'
   gem 'devise_invitable'
   gem 'xlog'
-  gem "image_processing"
+  # gem "image_processing"
   gem 'pundit'
   gem 'passpartu'
 
@@ -42,6 +47,8 @@ def add_gems
 
   gem 'elasticsearch'
   gem 'searchkick'
+
+  gem "mission_control-jobs"
 
   gem_group :development, :test do
     # gem 'dotenv'
@@ -59,7 +66,7 @@ def add_gems
     gem 'rspec-retry'
     gem 'simplecov'
     gem 'rspec-rails', '~> 4.0', '>= 4.0.1'
-    gem 'rspec-sidekiq'
+    # gem 'rspec-sidekiq'
     gem 'vcr'
     gem 'fakeredis'
     gem 'factory_bot_rails'
@@ -79,8 +86,9 @@ def copy_configs
   download_file 'config/initializers/flash.rb'
   download_file 'config/initializers/oj.rb'
   download_file 'config/initializers/searchkick.rb'
+  # download_file 'config/initializers/sidekiq.rb'
   download_file 'config/initializers/disable_raise_on_missing_callbacks.rb'
-  download_file 'config/sidekiq.yml'
+  # download_file 'config/sidekiq.yml'
   # download_file 'config/initializers/rspec_api_documentation.rb'
 end
 
@@ -93,13 +101,13 @@ def configure_cors
   end \n"
 end
 
-def configure_sprockets
-  insert_into_file(
-    'config/application.rb',
-    "require 'sprockets/railtie'\n\n",
-    before: 'Bundler.require(*Rails.groups)'
-  )
-end
+# def configure_sprockets
+#   insert_into_file(
+#     'config/application.rb',
+#     "require 'sprockets/railtie'\n\n",
+#     before: 'Bundler.require(*Rails.groups)'
+#   )
+# end
 
 def download_spec_acceptance_directory
   download_file 'spec/acceptance/api/devise/invitations_spec.rb'
@@ -114,11 +122,11 @@ def download_spec_support_directory
   download_file 'spec/support/auth.rb'
   download_file 'spec/support/database_cleaner.rb'
   download_file 'spec/support/factory_bot.rb'
-  download_file 'spec/support/fakeredis.rb'
+  # download_file 'spec/support/fakeredis.rb' # invalid file configuration
   download_file 'spec/support/form_parameters.rb'
   download_file 'spec/support/json.rb'
   download_file 'spec/support/search.rb'
-  download_file 'spec/support/sidekiq.rb'
+  download_file 'spec/support/simplecov_profile.rb'
   download_file 'spec/support/vcr.rb'
 end
 
@@ -173,20 +181,28 @@ def setup_apidocs
   download_file 'app/controllers/apidocs_controller.rb'
 end
 
-def setup_sidekiq
-  environment 'config.active_job.queue_adapter = :sidekiq'
+# def setup_sidekiq
+#   environment 'config.active_job.queue_adapter = :sidekiq'
+#
+#   insert_into_file(
+#     'config/routes.rb',
+#     "require 'sidekiq/web'\n\n",
+#     before: 'Rails.application.routes.draw do'
+#   )
+#
+#   insert_into_file(
+#     'config/routes.rb',
+#     "\n  mount with_admin_auth.call(Sidekiq::Web), at: '/sidekiq'\n\n",
+#     after: 'get "up" => "rails/health#show", as: :rails_health_check'
+#   )
+# end
 
-  insert_into_file(
-    'config/routes.rb',
-    "require 'sidekiq/web'\n\n",
-    before: 'Rails.application.routes.draw do'
-  )
+def setup_solid_queue
+  route "\n  mount MissionControl::Jobs::Engine, at: '/jobs'\n\n"
 
-  insert_into_file(
-    'config/routes.rb',
-    "\n  mount with_admin_auth.call(Sidekiq::Web), at: '/sidekiq'\n\n",
-    after: 'get "up" => "rails/health#show", as: :rails_health_check'
-  )
+  # TODO: Setup mission control jobs initializer
+  # rails mission_control:jobs:authentication:configure
+  # rails_command 'mission_control:jobs:authentication:configure'
 end
 
 def setup_routes_auth
@@ -240,7 +256,8 @@ def copy_docker
   download_file 'docker-entrypoint.sh'
   download_file 'docker-entrypoint.test.sh'
   download_file 'docker-entrypoint-anycable.sh'
-  download_file 'docker-entrypoint-sidekiq.sh'
+  download_file 'docker-entrypoint-jobs.sh'
+  # download_file 'docker-entrypoint-sidekiq.sh'
   download_file 'Dockerfile'
   download_file '.env.example', '.env'
 end
@@ -318,6 +335,10 @@ def setup_direct_uploads
   download_file 'app/services/direct_uploads/forms/base.rb'
   download_file 'app/services/direct_uploads/operations/create.rb'
   download_file 'app/services/direct_uploads/operations/destroy.rb'
+end
+
+def setup_kamal
+  template 'kamal-secrets.tt', '.kamal/secrets'
 end
 
 def download_services_folder
@@ -491,13 +512,14 @@ after_bundle do
   setup_pundit
   download_policies_folder
   setup_routes_auth
-  setup_sidekiq
+  # setup_sidekiq
   configure_cors
-  configure_sprockets
+  # configure_sprockets # migrate to propshaft
   download_assets_directory
   configure_tests
   setup_apidocs
   configure_xlog
+  setup_kamal
 
   setup_abdi
 

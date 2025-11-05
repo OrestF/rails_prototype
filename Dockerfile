@@ -37,6 +37,7 @@ COPY . .
 RUN ["chmod", "+x", "./docker-entrypoint.sh"]
 RUN ["chmod", "+x", "./docker-entrypoint.test.sh"]
 RUN ["chmod", "+x", "./docker-entrypoint-sidekiq.sh"]
+RUN ["chmod", "+x", "./docker-entrypoint-jobs.sh"]
 RUN ["chmod", "+x", "./docker-entrypoint-anycable.sh"]
 
 ENTRYPOINT ["sh", "./docker-entrypoint.sh"]
