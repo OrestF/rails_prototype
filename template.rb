@@ -126,7 +126,7 @@ def download_spec_support_directory
   download_file 'spec/support/form_parameters.rb'
   download_file 'spec/support/json.rb'
   download_file 'spec/support/search.rb'
-  # download_file 'spec/support/sidekiq.rb'
+  download_file 'spec/support/simplecov_profile.rb'
   download_file 'spec/support/vcr.rb'
 end
 

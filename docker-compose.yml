@@ -71,6 +71,8 @@ services:
       dockerfile: Dockerfile
     image: ${APP_NAME}_rails
     env_file: stack.env
+    environment:
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
     volumes:
       - '.:/var/www/${APP_NAME}'
     networks:
@@ -83,7 +85,6 @@ services:
     depends_on:
       - postgres
       - redis
-      - elasticsearch
     tty: true
     profiles:
       - all
