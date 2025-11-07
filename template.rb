@@ -45,10 +45,12 @@ def add_gems
   gem 'sweet_staging'
   gem 'rails_performance'
 
-  gem 'elasticsearch'
-  gem 'searchkick'
+  # gem 'elasticsearch'
+  # gem 'searchkick'
 
   gem "mission_control-jobs"
+
+  gem 'action_scope'
 
   gem_group :development, :test do
     # gem 'dotenv'
@@ -85,7 +87,7 @@ def copy_configs
   download_file 'config/initializers/redis.rb'
   download_file 'config/initializers/flash.rb'
   download_file 'config/initializers/oj.rb'
-  download_file 'config/initializers/searchkick.rb'
+  # download_file 'config/initializers/searchkick.rb'
   # download_file 'config/initializers/sidekiq.rb'
   download_file 'config/initializers/disable_raise_on_missing_callbacks.rb'
   # download_file 'config/sidekiq.yml'
@@ -300,8 +302,8 @@ def download_data_folder
   download_file 'data/user.rb'
 
   download_file 'data/concerns/users/temporary_data.rb'
-  download_file 'data/concerns/users/searchable.rb'
-  download_file 'data/concerns/searchable.rb'
+  # download_file 'data/concerns/users/searchable.rb' # DEPRECATED
+  # download_file 'data/concerns/searchable.rb' # DEPRECATED
 end
 
 def download_business_folder

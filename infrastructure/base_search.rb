@@ -1,78 +1,141 @@
 # frozen_string_literal: true
 
 class BaseSearch < BaseAction
-  attr_reader :scope, :filter_params
+  include Pagy::Backend
 
-  def self.order_options
-    name.split('::')[-1].classify.safe_constantize.new.search_data.keys.each_with_object({}) do |field_name, hash|
-      hash[field_name] = %i[asc desc]
-    end
-  end
+  attr_reader :scope, :search_params, :paginate
+
+  TEXT_SEARCH_KEY = :by_free_text
+  SORT_PREFIX = 'sort_by'
 
   def call
-    reindex_if_needed
-    return scope if permitted_filter_params.blank?
+    # reindex_if_needed
+    return simple_search if permitted_search_params.blank?
 
     search_results
   end
 
   private
 
-  def reindex_if_needed
-    return unless advanced?
+  # def reindex_if_needed
+  #   return unless advanced?
+  #
+  #   scope.klass.reindex_if_needed(scope.klass.all)
+  # end
 
-    scope.klass.reindex_if_needed(scope.klass.all)
+  # rubocop:disable Layout/LineLength
+  def permitted_search_params
+    return {} if search_params.blank?
+    return @permitted_search_params if defined?(@permitted_search_params)
+
+    patch_free_text_search
+
+    @permitted_search_params = (search_params.is_a?(ActionController::Parameters) ? search_params.permit!.to_h : search_params).slice(*permitted_attributes)
   end
+  # rubocop:enable Layout/LineLength
 
-  def permitted_filter_params
-    return {} if filter_params.blank?
-
-    filter_attributes = filter_params.is_a?(ActionController::Parameters) ? filter_params.permit!.to_h : filter_params
-    filter_attributes.slice(*permitted_attributes)
+  def patch_free_text_search
+    # make by_search_query work as by_free_text
+    if search_params[:by_free_text].present?
+      search_params.delete(:by_search_query)
+    elsif search_params[:by_search_query].present?
+      search_params[:by_free_text] = search_params[:by_search_query]
+    else
+      search_params
+    end
   end
 
   def search_results
-    return scope.filter_collection(permitted_filter_params.except(:order_by)).order(permitted_filter_params[:order_by]) unless advanced?
+    simple_search
+    # return simple_search unless advanced?
 
-    advanced_search
+    # optimized_advanced_search
   end
 
-  def advanced?
-    Searchkick.models.include?(scope.klass)
-  end
+  # def advanced?
+  #   Searchkick.models.include?(scope.klass)
+  # end
 
   def advanced_query_param
-    @advanced_query_param ||= filter_params.delete(:by_free_text) || '*'
+    @advanced_query_param ||= search_params.delete(TEXT_SEARCH_KEY) || '*'
   end
 
-  # rubocop:disable Metrics/AbcSize
-  def advanced_search
-    advanced_search_response_ids = scope.klass.search(
+  def simple_search(skip_sorting: false)
+    apply_filters
+    apply_sorting unless skip_sorting
+    apply_pagination if paginate?
+
+    @scope
+  end
+
+  def optimized_advanced_search
+    apply_filters
+    advanced_result_ids = scope.klass.search(
       advanced_query_param,
       misspellings: false,
-      scope_results: ->(r) { r.search_import.filter_collection(permitted_filter_params.except(:order_by)) },
-      order: permitted_order_params,
-      **advanced_search_extra_params
-    ).pluck(scope.klass.primary_key.to_sym)
+      load: false,
+      **advanced_params
+    ).map(&:id)
 
-    scope.where(scope.klass.primary_key.to_sym => advanced_search_response_ids)
-         .in_order_of(scope.klass.primary_key.to_sym, advanced_search_response_ids)
+    @scope = scope.where(id: advanced_result_ids)
+    apply_sorting
+    apply_pagination if paginate?
+
+    scope
   end
-  # rubocop:enable Metrics/AbcSize
+
+  def advanced_params
+    # limit advanced search only to simple search results
+    ids_query = { where: { scope.klass.primary_key.to_sym => scope.ids } }
+    params = advanced_search_extra_params
+    params[:where] = ids_query[:where].merge(params[:where].to_h)
+    params
+  end
+
+  def apply_filters
+    @scope = scope.filter_collection(filter_params)
+  end
+
+  def apply_sorting
+    @scope = scope.filter_collection(sort_params)
+  end
+
+  def apply_pagination
+    before_pagination_count = @scope.count
+    @scope = paginate_collection(scope, pagination_params)
+    @scope.define_singleton_method(:before_pagination_count) { before_pagination_count }
+    @scope
+  end
+
+  def filter_params
+    permitted_search_params.except(TEXT_SEARCH_KEY).reject { |k, _v| k.to_s.start_with?(SORT_PREFIX) }
+  end
+
+  def sort_params
+    permitted_search_params.except(TEXT_SEARCH_KEY).select { |k, _v| k.to_s.start_with?(SORT_PREFIX) }
+  end
+
+  def pagination_params
+    { page: 1, per_page: 10 }.with_indifferent_access.merge!(search_params.slice(:page, :per_page))
+  end
 
   def advanced_search_extra_params
     {}
   end
 
-  def permitted_order_params
-    return {} if permitted_filter_params[:order_by].blank?
-
-    permitted_filter_params[:order_by].slice(*self.class::ORDER_OPTIONS.keys).tap do |order|
-      order.transform_values! { |v| { order: v }.merge(unmapped_type: :long) }
-    end
-  end
-
   def permitted_attributes
     self.class::PERMITTED_ATTRIBUTES
+  end
+
+  def paginate?
+    @paginate
+  end
+
+  def paginate_collection(scope, options)
+    if Pagy::VERSION.to_i >= 9
+      pagy(scope, { page: options[:page], limit: options[:per_page] }).last
+    else
+      pagy(scope, { page: options[:page], items: options[:per_page] }).last
+    end
   end
 end

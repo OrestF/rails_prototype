@@ -4,7 +4,7 @@ class User < ApplicationRecord
   include Devise::JWT::RevocationStrategies::JTIMatcher
   include Passpartu
   include Users::TemporaryData
-  include Users::Searchable
+  # include Users::Searchable # DEPRECATED
 
   # Include default devise modules. Others available are:
   # :confirmable, :trackable and :omniauthable
