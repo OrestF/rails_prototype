@@ -57,6 +57,8 @@ module Authorizer
   end
 
   def authorize_with_configs(record, configs = {})
+    skip_authorization # required not ot get Pundit::AuthorizationNotPerformedError
+    skip_policy_scope # required not ot get Pundit::AuthorizationNotPerformedError
     policy = configs[:policy_class].presence || policy_class
     return true if policy.new(current_user, record, configs).send(:"#{action_name}?")
 

@@ -7,9 +7,9 @@ abort('The Rails environment is running in production mode!') if Rails.env.produ
 require 'simplecov'
 require 'rspec/rails'
 require 'rspec_api_documentation/dsl'
-require 'devise/jwt/test_helpers'
+require 'support/simplecov_profile'
 
-SimpleCov.start 'rails'
+SimpleCov.start 'abdi'
 
 begin
   ActiveRecord::Migration.maintain_test_schema!

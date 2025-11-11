@@ -34,6 +34,16 @@ class Api::BaseController < ActionController::API
     record_class.model_name.i18n_key
   end
 
+  def serialize_record(record, options = {})
+    options[:root] ||= record_class_key
+    super
+  end
+
+  def serialize_collection(collection, options = {})
+    options[:root] ||= record_class_key.to_s.pluralize
+    super
+  end
+
   def authenticate_user!
     super
 

@@ -92,6 +92,7 @@ def copy_configs
   download_file 'config/initializers/disable_raise_on_missing_callbacks.rb'
   # download_file 'config/sidekiq.yml'
   # download_file 'config/initializers/rspec_api_documentation.rb'
+  download_file 'config/initializers/solid_cache_pg_patch.rb'
 end
 
 def configure_cors
