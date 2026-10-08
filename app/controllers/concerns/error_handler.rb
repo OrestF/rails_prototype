@@ -19,8 +19,7 @@ module ErrorHandler
 
     raise error if live_env?
 
-    message, backtrace = live_env? ? ['', ''] : [error.message, error.backtrace.first(10).join("\n")]
-    error_response('Internal Server Error', message, 500, backtrace)
+    error_response('Internal Server Error', error.message, 500, error.backtrace.first(10).join("\n"))
   end
 
   def error_response(status, message, code, backtrace = '')

@@ -1,6 +1,11 @@
 <h1>Welcome to <%= Rails.root.basename.to_s.humanize %> <%= Rails.env %></h1>
 
 <details>
+  <summary>OpenAPI Docs</summary>
+  <p style="margin-left: 20px;"><%= link_to('Download', open_api_docs_path, target: '_blank') %></p>
+</details>
+
+<details>
   <summary>Environments</summary>
   <p>
     <ul>

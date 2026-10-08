@@ -8,6 +8,7 @@ require 'simplecov'
 require 'rspec/rails'
 require 'rspec_api_documentation/dsl'
 require 'support/simplecov_profile'
+require 'devise/jwt/test_helpers'
 
 SimpleCov.start 'abdi'
 
@@ -26,8 +27,4 @@ RSpec.configure do |config|
   config.use_transactional_fixtures = false
   config.infer_spec_type_from_file_location!
   config.filter_rails_from_backtrace!
-end
-
-RspecApiDocumentation.configure do |config|
-  config.format = :json
 end

@@ -47,7 +47,9 @@ RspecApiDocumentation.configure do |config|
   # An array of output format(s).
   # Possible values are :json, :html, :combined_text, :combined_json,
   #   :json_iodocs, :textile, :markdown, :append_json
-  config.format = %i[json]
+  # :json feeds Apitome (/api/docs), :open_api writes doc/api/open_api.json (Swagger 2.0).
+  # The OpenAPI title, host, schemes etc. come from doc/configurations/api/open_api.yml (api_name is not used there)
+  config.format = %i[json open_api]
 
   # Change how the post body is formatted by default, you can still override by `raw_post`
   # Can be :json, :xml, or a proc that will be passed the params
