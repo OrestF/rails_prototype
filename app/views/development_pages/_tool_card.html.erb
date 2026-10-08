@@ -1,0 +1,20 @@
+<%# locals: (title:, text:, path:, icon:, lock: nil, status: nil, download: false) -%>
+<%= link_to path, class: 'card', **(download ? {} : { target: '_blank', rel: 'noopener' }) do %>
+  <span class="card-icon"><%= render 'icon', name: icon %></span>
+  <span class="card-body">
+    <span class="card-title"><%= title %></span>
+    <span class="card-text"><%= text %></span>
+    <span class="card-meta">
+      <code><%= path %></code>
+      <% if status %>
+        <%= tag.span status[:label], class: "tag tag-#{status[:tone]}", title: status[:hint] %>
+      <% end %>
+      <% if lock %>
+        <span class="tag" title="<%= lock %>"><%= render 'icon', name: :lock %>Login</span>
+      <% end %>
+    </span>
+  </span>
+  <span class="card-arrow" title="<%= download ? 'Downloads a file' : 'Opens in a new tab' %>">
+    <%= render 'icon', name: download ? :download : :external %>
+  </span>
+<% end %>

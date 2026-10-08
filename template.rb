@@ -21,7 +21,7 @@ end
 
 def add_gems
   # Overwrite the whole Gemfile so the generated app matches the house standard:
-  # alphabetical (Bundler/OrderedGems), Redis-free, Propshaft assets, no kamal/thruster/vcr/webmock.
+  # alphabetical (Bundler/OrderedGems), Redis-free, Propshaft assets, no kamal/thruster/vcr/webmock/sweet_staging.
   # Rails is pinned to the generator version so the generated configs match the runtime.
   rails_version = [Rails::VERSION::MAJOR, Rails::VERSION::MINOR, Rails::VERSION::TINY].join('.')
 
@@ -58,7 +58,6 @@ def add_gems
     gem 'solid_cable'
     gem 'solid_cache'
     gem 'solid_queue'
-    gem 'sweet_staging'
     gem 'tzinfo-data', platforms: %i[ windows jruby ]
     gem 'xlog'
 
@@ -159,6 +158,7 @@ def configure_tests
   environment 'config.generators.test_framework = :rspec'
 end
 
+# DEPRECATED: sweet_staging is no longer in the Gemfile; add `gem 'sweet_staging'` back to use it
 def setup_sweet_staging
   download_file 'config/initializers/sweet_staging.rb'
 end
@@ -456,6 +456,9 @@ end
 def setup_home_page
   download_file 'app/controllers/development_pages_controller.rb'
   download_file 'app/views/development_pages/home.html.erb'
+  download_file 'app/views/development_pages/_tool_card.html.erb'
+  download_file 'app/views/development_pages/_chips.html.erb'
+  download_file 'app/views/development_pages/_icon.html.erb'
   download_file 'app/views/layouts/development_pages.html.erb'
 end
 
@@ -838,7 +841,7 @@ after_bundle do
   setup_db
   setup_motor_admin
   setup_maintenance_tasks
-  setup_sweet_staging
+  # setup_sweet_staging # DEPRECATED
   # setup_rails_performance # needs Redis
 
   setup_routes

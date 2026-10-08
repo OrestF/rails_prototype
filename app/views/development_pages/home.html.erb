@@ -1,61 +1,160 @@
-<h1>Welcome to <%= Rails.root.basename.to_s.humanize %> <%= Rails.env %></h1>
+<% app_name = Rails.application.class.module_parent_name.titleize %>
+<% admin_login = 'Asks for the admin credentials (admin.username / admin.password) outside development and test' %>
 
-<details>
-  <summary>OpenAPI Docs</summary>
-  <p style="margin-left: 20px;"><%= link_to('Download', open_api_docs_path, target: '_blank') %></p>
-</details>
+<section class="hero">
+  <p class="eyebrow">Backend control panel</p>
+  <h1><%= app_name %></h1>
+  <p class="lead">API documentation, admin tools and background jobs for the <strong><%= Rails.env %></strong> environment.</p>
+</section>
 
-<details>
-  <summary>Environments</summary>
-  <p>
-    <ul>
-      <li>Staging</li>
-      <li>
-        <ul>
-          <li><%= link_to('Frontend', '', target: '_blank') %></li>
-          <li><%= link_to('Backend', '', target: '_blank') %></li>
-          <li><%= link_to('Portainer', '', target: '_blank') %></li>
-        </ul>
-      </li>
-      <li>Production</li>
-      <li>
-        <ul>
-          <li><%= link_to('Frontend', '', target: '_blank') %></li>
-          <li><%= link_to('Backend', '', target: '_blank') %></li>
-          <li><%= link_to('Portainer', '', target: '_blank') %></li>
-        </ul>
-      </li>
+<section class="section" aria-labelledby="api-title">
+  <div class="section-head">
+    <h2 id="api-title">API</h2>
+    <p>Docs are generated from the acceptance specs in <code>spec/acceptance</code></p>
+  </div>
+  <div class="grid grid-2">
+    <%= render 'tool_card', title: 'API documentation', icon: :book, path: api_docs_path,
+                            text: 'Endpoints, parameters, example requests and responses (Apitome).',
+                            status: docs_status('doc/api/index.json') %>
+    <%= render 'tool_card', title: 'OpenAPI specification', icon: :code, path: open_api_docs_path, download: true,
+                            text: 'Swagger 2.0 JSON for Postman, Insomnia or client code generators.',
+                            status: docs_status('doc/api/open_api.json'), lock: (admin_login unless Rails.env.local?) %>
+  </div>
+  <div class="card auth">
+    <span class="card-icon"><%= render 'icon', name: :key %></span>
+    <div class="card-body">
+      <span class="card-title">Authentication</span>
+      <span class="card-text">Sign in, then send the returned JWT with every request.</span>
+      <dl class="ref">
+        <div>
+          <dt>Base URL</dt>
+          <dd><code><%= request.base_url %>/api/v1</code></dd>
+        </div>
+        <div>
+          <dt>Sign in</dt>
+          <dd><code>POST /api/v1/users/sign_in</code></dd>
+        </div>
+        <div>
+          <dt>Header</dt>
+          <dd><code>Authorization: Bearer &lt;JWT&gt;</code></dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="ops-title">
+  <div class="section-head">
+    <h2 id="ops-title">Admin &amp; operations</h2>
+    <p>Each tool opens in a new tab</p>
+  </div>
+  <div class="grid">
+    <%= render 'tool_card', title: 'Admin panel', icon: :database, path: '/motor_admin',
+                            text: 'Browse, edit and query the data (Motor Admin).',
+                            lock: ('Asks for MOTOR_AUTH_USERNAME / MOTOR_AUTH_PASSWORD' if ENV['MOTOR_AUTH_USERNAME'].present?) %>
+    <%= render 'tool_card', title: 'Background jobs', icon: :layers, path: '/jobs',
+                            text: 'Solid Queue queues, workers, failed and scheduled jobs (Mission Control).',
+                            lock: (admin_login unless Rails.env.local?) %>
+    <%= render 'tool_card', title: 'Maintenance tasks', icon: :tool, path: '/maintenance_tasks',
+                            text: 'Run and track one-off data tasks (maintenance_tasks).',
+                            lock: (admin_login unless Rails.env.local?) %>
+    <%# sweet_staging is deprecated in the template: this card shows up only if the gem is added back %>
+    <% if defined?(SweetStaging) && SweetStaging.enabled %>
+      <%= render 'tool_card', title: 'Logs & console', icon: :terminal, path: SweetStaging.mount_at,
+                              text: 'Tail the application logs in the browser (sweet_staging).',
+                              lock: 'Asks for the admin credentials (admin.username / admin.password)' %>
+    <% end %>
+    <% if defined?(RailsPerformance) %>
+      <%= render 'tool_card', title: 'Performance', icon: :activity, path: '/apm',
+                              text: 'Request, query and job timings (rails_performance).' %>
+    <% end %>
+    <%= render 'tool_card', title: 'Health check', icon: :heart, path: rails_health_check_path,
+                            text: 'Responds 200 when the app boots, for load balancers and uptime monitors.' %>
+  </div>
+</section>
+
+<section class="section">
+  <div class="split">
+    <div class="panel">
+      <h2>Environments</h2>
+      <ul class="rows">
+        <% @project_links[:environments].each do |name, links| %>
+          <li class="row">
+            <span class="row-name" data-env="<%= name.downcase %>">
+              <span class="env-dot"></span><%= name %>
+              <% if name.casecmp?(Rails.env) %><span class="tag tag-ok">You are here</span><% end %>
+            </span>
+            <%= render 'chips', links: links %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Project links</h2>
+      <ul class="rows">
+        <li class="row"><span class="row-name">Integrations</span><%= render 'chips', links: @project_links[:integrations] %></li>
+        <li class="row"><span class="row-name">Useful links</span><%= render 'chips', links: @project_links[:useful] %></li>
+      </ul>
+    </div>
+  </div>
+  <% if @missing_project_links %>
+    <p class="note">Dashed links are not set yet: add their URLs to <code>DevelopmentPagesController::PROJECT_LINKS</code>.</p>
+  <% end %>
+</section>
+
+<% if Rails.env.local? %>
+  <section class="section" aria-labelledby="start-title">
+    <div class="section-head">
+      <h2 id="start-title">Getting started</h2>
+      <p>Shown in development and test only</p>
+    </div>
+    <ul class="commands">
+      <% [
+        ['Start the app with a jobs worker inside Puma', 'SOLID_QUEUE_IN_PUMA=1 bin/rails server'],
+        ['Or run the jobs worker on its own', 'bin/jobs'],
+        ['Generate the API docs and doc/api/open_api.json', DevelopmentPagesController::DOCS_COMMAND],
+        ['Run the test suite', 'bundle exec rspec'],
+        ['Lint and autocorrect', 'bundle exec rubocop -A']
+      ].each do |label, command| %>
+        <li class="command">
+          <span class="command-label"><%= label %></span>
+          <code class="command-code"><%= command %></code>
+          <button type="button" class="copy" data-copy="<%= command %>" aria-label="Copy: <%= command %>">
+            <%= render 'icon', name: :copy %><span data-copy-label>Copy</span>
+          </button>
+        </li>
+      <% end %>
     </ul>
-  </p>
-</details>
+  </section>
 
-<details>
-  <summary>Integrations</summary>
-  <p>
-    <ul>
-      <li><%= link_to('Stripe?', '', target: '_blank') %></li>
-    </ul>
-  </p>
-</details>
+  <script>
+    document.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-copy]');
+      if (!button) return;
 
+      var label = button.querySelector('[data-copy-label]');
+      var done = function () {
+        button.dataset.state = 'copied';
+        label.textContent = 'Copied';
+        setTimeout(function () { delete button.dataset.state; label.textContent = 'Copy'; }, 1600);
+      };
 
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(button.dataset.copy).then(done);
+      } else {
+        var field = document.createElement('textarea');
+        field.value = button.dataset.copy;
+        field.style.position = 'fixed';
+        field.style.opacity = '0';
+        document.body.appendChild(field);
+        field.select();
+        document.execCommand('copy');
+        field.remove();
+        done();
+      }
+    });
+  </script>
+<% end %>
 
-<details>
-  <summary>Useful links</summary>
-  <p>
-  <ul>
-    <li><%= link_to('JIRA', '', target: '_blank') %></li>
-  </ul>
-  </p>
-</details>
-
-<hr>
-
-<details>
-  <summary>Actions</summary>
-  <p>
-  <article>
-    <%#= render 'shared/websockets_test' %>
-  </article>
-  </p>
-</details>
+<%# Actions, e.g. a websockets playground %>
+<%#= render 'shared/websockets_test' %>
