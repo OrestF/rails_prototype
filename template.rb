@@ -315,9 +315,37 @@ def copy_docker
   download_file 'docker-entrypoint.test.sh'
   download_file 'docker-entrypoint-anycable.sh'
   download_file 'docker-entrypoint-jobs.sh'
-  # download_file 'docker-entrypoint-sidekiq.sh'
+  # With setup_sidekiq, the jobs entrypoint runs Sidekiq instead and keeps its name:
+  # gsub_file 'docker-entrypoint-jobs.sh', 'bundle exec bin/jobs', 'bundle exec sidekiq -C config/sidekiq.yml'
   download_file 'Dockerfile'
   download_file '.env.example', '.env'
+  download_file '.env.test' # committed, test-only: CI copies it to stack.env
+
+  # Downloads are written as 644, but git must store the entrypoints as 755: the bind mount (.:/var/www) hides
+  # the image's chmod, and CI checks them out with their git mode
+  %w[docker-entrypoint.sh docker-entrypoint.test.sh docker-entrypoint-anycable.sh docker-entrypoint-jobs.sh].each do |entrypoint|
+    chmod entrypoint, 0o755
+  end
+
+  # The image runs the Ruby the app was generated with
+  gsub_file 'Dockerfile', %r{^FROM --platform=linux/amd64 ruby:.*$}, "FROM --platform=linux/amd64 ruby:#{RUBY_VERSION}"
+  %w[.env .env.test].each do |env_file|
+    gsub_file env_file, /^RUBY_VERSION=$/, "RUBY_VERSION=#{RUBY_VERSION}"
+    gsub_file env_file, /^APP_NAME=$/, "APP_NAME=#{app_name}"
+  end
+end
+
+# Containers reach the postgres service through POSTGRES_* (stack.env); local runs get nil from RCreds and keep
+# using the socket
+def configure_database_env
+  postgres_env = <<~'YAML'.gsub(/^/, '  ')
+    # Containers reach the postgres service through POSTGRES_* (stack.env); local runs get nil and use the socket
+    username: <%= RCreds.fetch(:postgres, :user) %>
+    password: <%= RCreds.fetch(:postgres, :password) %>
+    host: <%= RCreds.fetch(:postgres, :host) %>
+    port: <%= RCreds.fetch(:postgres, :port) %>
+  YAML
+  inject_into_file 'config/database.yml', postgres_env, after: /^  (?:max_connections|pool): .*\n/
 end
 
 def copy_docs
@@ -807,6 +835,13 @@ def setup_house_style
 
     # Ignore precompiled assets (Propshaft writes them to public/assets).
     /public/assets
+
+    # SimpleCov output
+    /coverage/
+
+    # Committed test-only environment for CI (CI copies it to stack.env); stack.env itself is local
+    !/.env.test
+    stack.env
   GITIGNORE
 end
 
@@ -837,6 +872,7 @@ after_bundle do
   download_services_folder
   setup_home_page
 
+  configure_database_env
   setup_solid_queue
   setup_db
   setup_motor_admin

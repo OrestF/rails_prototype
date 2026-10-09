@@ -1,7 +1,7 @@
-FROM --platform=linux/amd64 ruby:3.2.3
+FROM --platform=linux/amd64 ruby:4.0.6
 
 # Set an environment variable where the Rails app is installed to inside of Docker image
-ENV RAILS_ROOT /var/www/$APP_NAME
+ENV RAILS_ROOT=/var/www
 
 # Add label for watchtower
 LABEL com.centurylinklabs.watchtower.enable="true"
@@ -27,7 +27,8 @@ ENV RACK_ENV=$RAILS_ENV
 COPY Gemfile Gemfile
 COPY Gemfile.lock Gemfile.lock
 # development/production differs in bundle install
-RUN gem install bundler
+# The Bundler version the lockfile was written with (BUNDLED WITH), so image and lockfile cannot drift
+RUN gem install bundler -v "$(awk '/BUNDLED WITH/ { getline; print $1 }' Gemfile.lock)"
 RUN bundle install --jobs 20 --retry 5
 
 # Adding project files

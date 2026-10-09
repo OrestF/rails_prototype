@@ -1,5 +1,3 @@
-version: '3.4'
-
 services:
   postgres:
     container_name: ${APP_NAME}_postgres
@@ -10,7 +8,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      # Set POSTGRES_PUBLISHED_PORT when a local PostgreSQL already listens on 5432
+      - "${POSTGRES_PUBLISHED_PORT:-5432}:5432"
     env_file: stack.env
     healthcheck:
       test: [ 'CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}' ]
@@ -18,6 +17,7 @@ services:
       timeout: 10s
       retries: 3
     profiles:
+      - development
       - all
       - cicd
       - staging
@@ -43,26 +43,6 @@ services:
 #      - cicd
 #      - staging
 
-  redis:
-    container_name: ${APP_NAME}_redis
-    image: redis:${REDIS_VERSION}
-    restart: always
-    volumes:
-      - redis_data:/data
-    networks:
-      - app-net
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    profiles:
-      - all
-      - cicd
-      - staging
-
   rails: &rails
     container_name: ${APP_NAME}_rails
     restart: always
@@ -74,19 +54,28 @@ services:
     environment:
       RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
     volumes:
-      - '.:/var/www/${APP_NAME}'
+      - '.:/var/www'
+      # Active Storage files survive container recreation and stay out of the host's storage/
+      - rails_storage:/var/www/storage
     networks:
       - app-net
     ports:
-      - "3000:3000"
+      - "${RAILS_PUBLISHED_PORT:-3000}:3000"
     #    entrypoint: ./docker-entrypoint.sh
     # For using pry
     stdin_open: true
     depends_on:
       - postgres
-      - redis
+    # jobs waits for this: the entrypoint runs db:prepare, which creates the queue database
+    healthcheck:
+      test: [ 'CMD-SHELL', 'curl -fs http://localhost:3000/up || exit 1' ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
     tty: true
     profiles:
+      - development
       - all
 
   rails_server:
@@ -112,8 +101,16 @@ services:
     container_name: ${APP_NAME}_jobs
     restart: always
     ports: []
+    # Solid Queue; a project on Sidekiq runs it from the same entrypoint (see the script)
     entrypoint: ./docker-entrypoint-jobs.sh
+    # On a fresh volume the queue database exists only once rails has run db:prepare
+    depends_on:
+      rails:
+        condition: service_healthy
+    healthcheck:
+      disable: true
     profiles:
+      - development
       - all
 
   jobs_server:
@@ -132,33 +129,6 @@ services:
       - production
       - preprod
       - staging
-
-#  sidekiq: &sidekiq
-#    <<: *rails
-#    image: ${APP_NAME}_rails
-#    container_name: ${APP_NAME}_sidekiq
-#    restart: always
-#    ports: []
-#    entrypoint: ./docker-entrypoint-sidekiq.sh
-#    profiles:
-#      - all
-#
-#  sidekiq_server:
-#    <<: *sidekiq
-#    image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
-#    logging:
-#      driver: "awslogs"
-#      options:
-#        awslogs-region: "${AWS_REGION}"
-#        awslogs-group: "${APP_NAME}-${COMPOSE_PROFILES}-rails"
-#        awslogs-datetime-format: '\[%b %d, %Y %H:%M:%S\]'
-#        tag: "{{.Name}}/{{.ID}}"
-#        awslogs-create-group: "true"
-#    depends_on: {}
-#    profiles:
-#      - production
-#      - preprod
-#      - staging
 
 #  ws:
 #    container_name: ${APP_NAME}_ws
@@ -206,9 +176,9 @@ services:
 # To access data postgres writes within container from host machine
 volumes:
   postgres_data: {}
-  redis_data: {}
+  rails_storage: {}
 #  elasticsearch_data: {}
 
+# Project-scoped (<project>_app-net): a fixed global name collides between projects and CI runs on one host
 networks:
-  app-net:
-    name: app-net
+  app-net: {}
