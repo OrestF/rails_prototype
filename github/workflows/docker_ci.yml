@@ -1,14 +1,14 @@
-# COAX Rails CI, modelled on doer_be_api's .github/workflows/rubocop.yml and docker_ci.yml:
-#   lint   - RuboCop (+ Brakeman and bundler-audit) on the runner
+# COAX Rails CI, modelled on doer_be_api's .github/workflows/docker_ci.yml and rubocop.yml:
+#   lint   - RuboCop, Brakeman and bundler-audit on the runner
 #   test   - the specs inside Docker Compose, then SonarQube analysis with the coverage report
 # Wiki "Setup CI/CD": tests and linters run on pull requests to dev and production.
 #
-# Needs in the repository (see references/rails.md, "CI"): .env.test (copied to stack.env here), a Compose "cicd"
-# profile that starts Postgres, database.yml reading POSTGRES_* from ENV, docker-entrypoint.test.sh, and the
-# SONAR_URL / SONAR_TOKEN secrets.
-# Runners: COAX self-hosted ([self-hosted, coax]) are available to coaxsoft repositories; elsewhere use
-# runs-on: ubuntu-latest (Docker and apt are available there too).
-name: CI
+# template.rb writes this to .github/workflows/docker_ci.yml with <app_name> replaced by the app name (the
+# APP_NAME of .env.test); the setup skill checks it. Needs .env.test (copied to stack.env), the Compose "cicd"
+# profile, database.yml reading POSTGRES_*, docker-entrypoint.test.sh, and the SONAR_URL / SONAR_TOKEN_2025 secrets.
+# Runners: COAX self-hosted ([self-hosted, coax]) serve coaxsoft repositories; a client organization without
+# them uses runs-on: ubuntu-latest (Docker and apt are available there too).
+name: Docker CI
 
 on:
   workflow_dispatch:
@@ -18,12 +18,20 @@ on:
       - production
 
 concurrency:
-  group: "ci-${{ github.ref }}"
+  group: "docker-ci-${{ github.ref }}"
   cancel-in-progress: true
+
+env:
+  APP_NAME: "<app_name>" # for container names; the same as APP_NAME in .env.test
+  RAILS_ENV: test
+  COMPOSE_PROJECT_NAME: "<app_name>_${{ github.run_id }}"
+  # Build with the default docker driver: the image is written straight to the image store instead of the
+  # tarball export/import path, which swallows errors
+  BUILDX_BUILDER: default
 
 jobs:
   lint:
-    name: Run rubocop
+    name: Run linters
     runs-on: [self-hosted, coax]
     env:
       BUNDLE_WITHOUT: "test"
@@ -54,14 +62,8 @@ jobs:
     timeout-minutes: 20
     runs-on: [self-hosted, coax]
     env:
-      APP_NAME: ${{ github.event.repository.name }} # for dynamic container names
-      RAILS_ENV: test
-      COMPOSE_PROJECT_NAME: "${{ github.event.repository.name }}_${{ github.run_id }}"
-      # Build with the default docker driver: the image is written straight to the image store instead of the
-      # tarball export/import path, which swallows errors
-      BUILDX_BUILDER: default
       # Test-only values. r_creds reads ENV before credentials, so CI needs no credentials key
-      # (doer_be_api commits config/credentials/ci.key + ci.yml.enc instead; either works)
+      # (doer_be_api commits config/credentials/ci.key + ci.yml.enc instead)
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: ci-test-password
       DEVISE_JWT_SECRET_KEY: ci-test-only-jwt-secret
@@ -89,22 +91,22 @@ jobs:
         run: docker compose --env-file stack.env --project-name "$COMPOSE_PROJECT_NAME" --profile=cicd up -d
 
       - name: Docker compose build (rails)
-        run: docker compose --env-file stack.env --project-name "$COMPOSE_PROJECT_NAME" build rails --build-arg RAILS_ENV=${RAILS_ENV}
+        run: docker compose --env-file stack.env --project-name "$COMPOSE_PROJECT_NAME" build rails --build-arg RAILS_ENV="$RAILS_ENV"
 
       - name: Run specs
         run: >-
           docker compose --env-file stack.env --project-name "$COMPOSE_PROJECT_NAME"
           run --rm --name "${APP_NAME}_rails_${{ github.run_id }}" --entrypoint=./docker-entrypoint.test.sh
           --env RAILS_ENV --env ADMIN_USERNAME --env ADMIN_PASSWORD --env DEVISE_JWT_SECRET_KEY
-          --env APP_ROOT=$(pwd) rails
+          --env APP_ROOT="$(pwd)" rails
 
-      # `.:/var/www/<app>` is a bind mount, so the specs already wrote the report into the runner workspace and the
+      # `.:/var/www` is a bind mount, so the specs already wrote the report into the runner workspace and the
       # entrypoint rewrote its paths for Sonar.
       - name: Verify coverage report
         run: test -s ./coverage/coverage.json
 
-      # Java 17 is the sonar-scanner requirement as of 5.x
-      - uses: actions/setup-java@v3
+      # Java 17 is the sonar-scanner requirement as of 5.x (setup-java v3 runs on a Node that Actions dropped)
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -112,13 +114,16 @@ jobs:
       - name: Setup SonarQubeRunner
         uses: warchant/setup-sonar-scanner@v8
 
+      # The branch name comes from the pull request, so it reaches the shell through env, never inline
       - name: Analyze with SonarQube
+        env:
+          SONAR_BRANCH: ${{ github.head_ref || github.ref_name }}
         run: sonar-scanner
           -Dsonar.host.url=${{ secrets.SONAR_URL }}
-          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+          -Dsonar.token=${{ secrets.SONAR_TOKEN_2025 }}
           -Dsonar.projectKey=${{ github.event.repository.name }}
           -Dsonar.scm.provider=git
-          -Dsonar.branch.name=${{ github.head_ref || github.ref_name }}
+          -Dsonar.branch.name="$SONAR_BRANCH"
           -Dsonar.ruby.coverage.reportPaths=./coverage/coverage.json
           -Dsonar.coverage.exclusions=app/policies/**,app/helpers/**,app/javascript/**,app/channels/**,app/serializers/**,app/mailers/**,app/jobs/**,app/services/search/**,app/controllers/concerns/**,app/controllers/api_controller.rb,app/controllers/apidocs_controller.rb,app/controllers/application_controller.rb,test/**,spec/**,infrastructure/**,app/controllers/development_pages_controller.rb,app/controllers/api/v1/direct_uploads_controller.rb,data/**,db/migrate/**
 

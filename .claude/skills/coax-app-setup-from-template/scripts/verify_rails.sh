@@ -62,8 +62,8 @@ check_production_eager_load() {
 
 check_specs() { run bundle exec rspec; }
 
-# The CI test job (assets/rails/ci.yml) on the current working tree: a copy without credentials keys, credentials
-# from ENV, CI=1 (eager load). Copying keeps the real keys in place even if the run is interrupted.
+# The CI test job (.github/workflows/docker_ci.yml) on the current working tree: a copy without credentials keys,
+# credentials from ENV, CI=1 (eager load). Copying keeps the real keys in place even if the run is interrupted.
 check_ci_specs() {
   local copy status
   copy=$(mktemp -d) || return 1

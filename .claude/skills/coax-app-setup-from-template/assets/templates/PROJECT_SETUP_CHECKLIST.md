@@ -1,108 +1,33 @@
-# Project setup checklist: <PROJECT NAME>
+# Project setup: <app name>
 
-Derived from the COAX Wiki [Project setup](https://coaxsoftware.atlassian.net/wiki/spaces/CXWB/pages/19169903/Project+setup)
-page and its subpages. The same checklist is used for every stack (Ruby on Rails, Python, Node.js, React /
-Next.js, React Native): items describe outcomes, and the table below says what each one means for your stack.
-Kept up to date during setup: an item is ticked only once it is verified, with the date and evidence.
+<technology> · template: <source> · AI config: <tier> @ <baseline commit> · started <YYYY-MM-DD>
 
-Legend: `[x]` done · `[ ]` to do · `[-]` not applicable (reason given) · `-> owner: ...` needs a person ·
-`partial: ...` started here, rest pending
+Steps from the COAX Wiki [Project setup](https://coaxsoftware.atlassian.net/wiki/spaces/CXWB/pages/19169903/Project+setup).
+`[x]` done · `[ ]` to do · `[-]` not needed · `-> who` waiting on someone
 
-| | |
-| --- | --- |
-| Project | <PROJECT NAME> |
-| Client | <CLIENT> |
-| App type | <backend API / web front end / mobile app> |
-| Technology / template | <e.g. Ruby on Rails, COAX rails_prototype (main); Node.js, cxcx_be_nestjs_template; React Native, agreed starting point> |
-| AI config tier | <ruby / python / nodejs / react / react-native> |
-| Repository | <https://github.com/owner/name, or "not created yet"> |
-| Started / last updated | <YYYY-MM-DD> / <YYYY-MM-DD> |
-| Assumptions | <defaults used without confirmation, or "none"> |
+## Local setup
 
-### What the items mean for your stack
+- [ ] AI configuration imported
+- [ ] App generated from the template
+- [ ] Git: `dev` main branch; `staging` and `production` created
+- [ ] Tests pass
+- [ ] Linters and security scans clean
+- [ ] Runs locally
+- [ ] Runs in Docker
+- [ ] Git hooks installed
+- [ ] README and CHANGELOG written
+- [ ] CI workflow added (tests, linters, SonarQube)
+- [ ] `AGENTS.md` written, MCP connectors connected
 
-Use the column for your stack when working through the items. Where the Wiki defines no standard, the entry
-says so: agree it with the competence lead and record the choice in the item's note.
+## Repository and people
 
-| | Ruby on Rails | Python (Django) | Node.js (NestJS) | React / Next.js | React Native |
-| --- | --- | --- | --- | --- | --- |
-| Template (Wiki) | [rails_prototype](https://github.com/OrestF/rails_prototype) `template.rb` (the Wiki's railsbytes link is an older revision) | [cxcx_django_base_cookiecutter](https://github.com/coaxsoft/cxcx_django_base_cookiecutter) | [cxcx_be_nestjs_template](https://github.com/coaxsoft/cxcx_be_nestjs_template) | [React/Next bootstrap](https://coaxsoftware.atlassian.net/wiki/spaces/CXWB/pages/19235655/React+Next+bootstrap) | none listed: agree the starting point |
-| AI config tier | `ruby` | `python` | `nodejs` | `react` | `react-native` |
-| Standard linters | RuboCop, Brakeman, bundler-audit ([Recommended ruby gems](https://coaxsoftware.atlassian.net/wiki/x/loUlAQ)) | flake8, bandit (pre-commit example on [Git-flow](https://coaxsoftware.atlassian.net/wiki/x/L4AjAQ)) | [@coaxsoft/eslint-config-be](https://www.npmjs.com/package/@coaxsoft/eslint-config-be) | [@coax/eslint-config-fe-react](https://www.npmjs.com/package/@coax/eslint-config-fe-react) | not defined on the Wiki: agree it |
-| Test setup | RSpec, FactoryBot, SimpleCov ([Recommended ruby gems](https://coaxsoftware.atlassian.net/wiki/x/loUlAQ)) | as in the template | as in the template | as in the template | as in the template |
-| Git hooks tool | Overcommit ([Git-flow](https://coaxsoftware.atlassian.net/wiki/x/L4AjAQ)) | pre-commit ([Git-flow](https://coaxsoftware.atlassian.net/wiki/x/L4AjAQ), [Python Tools](https://coaxsoftware.atlassian.net/wiki/x/WYUjAQ)) | not defined on the Wiki: agree it | not defined on the Wiki: agree it | not defined on the Wiki: agree it |
-| "Runs locally" means | Dev server answers its health check (`/up`) | Dev server answers its health check | Dev server answers its health check | Dev server serves the app, and the production build succeeds | App builds and launches on an iOS simulator and an Android emulator |
-| Docker (section 3) | Required | Required | Required | Required (dev server or production build) | Usually not applicable: mark `[-]` unless the project ships its own services |
+- [ ] Repository created, branches pushed, `dev` is the default
+- [ ] AI config sync connected
+- [ ] First CI run green
+- [ ] SonarQube project and secrets -> DevOps
+- [ ] Secrets and keys stored in the team password manager
+- [ ] Competence lead: template confirmed, setup reviewed -> competence lead
 
-## 0. Before you start ([Project setup](https://coaxsoftware.atlassian.net/wiki/spaces/CXWB/pages/19169903/Project+setup))
+## Notes
 
-- [ ] Project setup template confirmed with the competence lead (or, for a stack with no Wiki template, the
-      starting point agreed)
-- [ ] Repository is set up by the competence lead, or a competence-lead review of the setup is agreed
-
-## 1. AI configuration ([Setup AI configuration](https://coaxsoftware.atlassian.net/wiki/spaces/CXWB/pages/1458995201/Setup+AI+configuration))
-
-- [ ] COAX AI configuration for the tier imported before any other setup work (rendered from
-      [ai_infrastructure](https://github.com/coaxsoft/ai_infrastructure); note the commit it came from)
-- [ ] Once the GitHub repository exists: connected to the COAX AI Infrastructure sync (automatic workflow for
-      `coaxsoft` repos, `sync-coax-ai-configs` otherwise), and any sync pull request reviewed and merged
-- [ ] `AGENTS.md` present in the repository root, generated by `/init-agents`: project and domain, routing (Jira,
-      Confluence, Figma, Observer, related repos), build and test commands, project-only rules
-- [ ] MCP servers connected (checked by `/init-agents`): Atlassian, Observer, GitHub, and Figma for apps with a UI
-
-## 2. Project structure ([Setup Project structure](https://coaxsoftware.atlassian.net/wiki/spaces/CXWB/pages/19169921/Setup+Project+structure), est. 2 h)
-
-- [ ] Project generated from the company template (or the agreed starting point) with the stack's standard
-      libraries (see the Tools page for the language)
-- [ ] Git repository initialised with `dev` as the main branch
-- [ ] Git connected to the remote GitHub repository, branches pushed (usually after the app is set up locally)
-- [ ] [Git-flow](https://coaxsoftware.atlassian.net/wiki/x/L4AjAQ) branches: `dev` (default), `staging`,
-      `production` (plus `preprod` if applicable)
-- [ ] Branch and commit conventions in use: `<JIRA-ID>/<branch_name>`, commits `<JIRA-ID>: message` (Jira smart commits)
-- [ ] Git hooks installed with the stack's hook tool, running the standard linters before each commit
-- [ ] Initial documentation: project-specific `README.md` (not template text: purpose, stack, prerequisites,
-      setup, how to run, test and lint) and `CHANGELOG.md`
-
-## 3. Docker ([Setup Docker](https://coaxsoftware.atlassian.net/wiki/spaces/CXWB/pages/19235302/Setup+Docker), est. 3 h)
-
-Required for backend APIs and web front ends. Mobile apps: mark `[-]` with the reason, unless the project ships
-its own services (for example a mock API).
-
-- [ ] The app builds and boots in Docker (`docker-compose.yml` and Dockerfile)
-- [ ] Every service the app needs runs in Docker (for example database, cache, background workers, message broker)
-
-## 4. Test environment and linters ([Setup Test Environment and Linters](https://coaxsoftware.atlassian.net/wiki/spaces/CXWB/pages/19202629/Setup+Test+Environment+and+Linters), est. 1 h)
-
-- [ ] The stack's COAX standard test setup is in place and the test suite is green
-- [ ] The stack's COAX standard linters (plus type checks and security scans where the stack has them) are
-      configured and clean
-- [ ] The app runs locally, as defined for the stack in the table above
-
-## 5. CI/CD with SonarQube ([Setup CI/CD with Sonarqube integration](https://coaxsoftware.atlassian.net/wiki/spaces/CXWB/pages/19104356/Setup+CI+CD+with+Sonarqube+integration), est. 2 h)
-
-- [ ] GitHub Actions run tests and linters (plus the build, for front-end and mobile apps) on pull requests to
-      `dev` and `production`
-- [ ] First CI run on GitHub is green
-- [ ] SonarQube project created (ask DevOps), project key = repository name
-- [ ] SonarQube analysis runs in GitHub Actions for branches and pull requests, with test coverage (as a CI step,
-      or as `sonar-branch.yml` + `sonar-pullrequest.yml` per the Wiki); multi-branch analysis enabled after the
-      first run
-- [ ] `SONAR_URL` and `SONAR_TOKEN` secrets set; SonarQube default branch renamed to match GitHub
-- [ ] SonarQube analysis connected to the corporate account ([GitHub Actions - SonarQube Integration](https://coaxsoftware.atlassian.net/wiki/spaces/CXWB/pages/26968539/GitHub+Actions+-+SonarQube+Integration))
-
-## 6. Sign-off
-
-- [ ] Competence lead reviewed the repository setup -> competence lead
-
-## Additional items
-
-<!-- Project- or technology-specific items, e.g. the "Checklist additions" of the technology reference -->
-
-## Verification log
-
-| Date | Check | Result | Notes |
-| --- | --- | --- | --- |
-
-## Template issues
-
-<!-- Defects any fresh project from this template would hit: what failed, the local fix, the fix the template needs -->
+<!-- One line each, only what a reviewer must know: template defects and the fix they need, deviations, open TODOs -->
