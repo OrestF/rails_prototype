@@ -14,7 +14,7 @@ def download_file(from_path, to_path = from_path)
     # for local development and upgrades
     copy_file from_path, to_path, force: true
   else
-    base_url = 'https://raw.githubusercontent.com/OrestF/rails_prototype/rails_api'
+    base_url = 'https://raw.githubusercontent.com/OrestF/rails_prototype/main'
     get([base_url, from_path].join('/'), to_path, force: true)
   end
 end
