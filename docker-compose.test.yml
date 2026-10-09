@@ -3,7 +3,6 @@
 
 # INFO: this file is NOT required by docker_ci.yml workflow. This is only for local development.
 
-version: '3.4'
 services:
   rails:
     extends:
