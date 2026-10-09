@@ -1,0 +1,10 @@
+<%# locals: (links:) -%>
+<span class="chips">
+  <% links.each do |label, url| %>
+    <% if url.present? %>
+      <%= link_to url, class: 'chip', target: '_blank', rel: 'noopener' do %><%= label %><%= render 'icon', name: :external %><% end %>
+    <% else %>
+      <span class="chip chip-empty" title="Not set yet: add the URL to DevelopmentPagesController::PROJECT_LINKS"><%= label %></span>
+    <% end %>
+  <% end %>
+</span>

@@ -1,28 +1,240 @@
+<% app_name = Rails.application.class.module_parent_name.titleize %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta content='text/html; charset=UTF-8' http-equiv="Content-Type"/>
-  <meta content="width=device-width,initial-scale=1" name="viewport"/>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
-  <meta name="color-scheme" content="light"/>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title><%= app_name %> · <%= Rails.env %></title>
+  <script>
+    // Apply the saved theme before the first paint (see the theme switch at the end of <body>)
+    try {
+      var savedTheme = localStorage.getItem('development-pages-theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') document.documentElement.dataset.theme = savedTheme;
+    } catch (error) {}
+  </script>
+  <style>
+    /* Colors are light-dark(light, dark) pairs: color-scheme picks the side, the OS setting unless [data-theme] forces one */
+    :root { color-scheme: light dark; }
+    :root[data-theme="light"] { color-scheme: light; }
+    :root[data-theme="dark"] { color-scheme: dark; }
+
+    :root {
+      --bg: light-dark(#f5f6f8, #0e1015);
+      --surface: light-dark(#ffffff, #161920);
+      --surface-muted: light-dark(#f0f2f5, #1e222a);
+      --border: light-dark(#e2e5ea, #272c36);
+      --border-strong: light-dark(#c9ced7, #3a414e);
+      --text: light-dark(#15171c, #e7e9ee);
+      --muted: light-dark(#555d6b, #a3abb9);
+      --faint: light-dark(#7d8696, #7b8394);
+      --accent: light-dark(#4054d6, #94a3ff);
+      --accent-soft: light-dark(#eceffd, #1e2442);
+      --ok: light-dark(#237a37, #74d68a);
+      --ok-soft: light-dark(#e4f3e8, #14291b);
+      --warn: light-dark(#955400, #ffc27a);
+      --warn-soft: light-dark(#fcf0dc, #2f2313);
+      --env-development: #2f9e44;
+      --env-test: #868e96;
+      --env-staging: #e67700;
+      --env-production: #e03131;
+      --radius: 12px;
+      --shadow: 0 1px 2px light-dark(rgb(16 24 40 / 6%), transparent);
+      --shadow-hover: 0 8px 24px light-dark(rgb(16 24 40 / 10%), rgb(0 0 0 / 40%));
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 var(--font); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; }
+    code { font-family: var(--mono); font-size: 0.85em; }
+    svg { display: block; }
+
+    .container { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+    /* Top bar */
+    .topbar { position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border);
+              background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: saturate(180%) blur(8px); }
+    .topbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 56px; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; min-width: 0; font-weight: 650; text-decoration: none; }
+    .brand span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .brand-mark { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 8px;
+                  background: var(--accent); color: var(--surface); font-size: 14px; font-weight: 700; }
+    .env-pill { display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 4px 12px; border: 1px solid var(--border);
+                border-radius: 999px; background: var(--surface); font-size: 13px; font-weight: 600; }
+    .topbar-actions { display: flex; flex: none; align-items: center; gap: 10px; }
+
+    /* Theme switch (shown by the script at the end of <body>, so it never appears without JavaScript) */
+    .theme-switch { display: inline-flex; padding: 2px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); }
+    .theme-switch[hidden] { display: none; }
+    .theme-option { display: grid; place-items: center; width: 30px; height: 26px; padding: 0; border: 0; border-radius: 999px;
+                    background: transparent; color: var(--faint); cursor: pointer; transition: color 0.15s, background-color 0.15s; }
+    .theme-option svg { width: 15px; height: 15px; }
+    .theme-option:hover { color: var(--text); }
+    .theme-option[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+    .theme-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+    /* Environment colors */
+    .env-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--env, var(--faint)); }
+    [data-env="development"] { --env: var(--env-development); }
+    [data-env="test"] { --env: var(--env-test); }
+    [data-env="staging"] { --env: var(--env-staging); }
+    [data-env="production"] { --env: var(--env-production); }
+
+    /* Hero */
+    .hero { padding: 44px 0 4px; }
+    .eyebrow { margin: 0 0 6px; color: var(--accent); font-size: 12px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; }
+    .hero h1 { margin: 0; font-size: clamp(28px, 4vw, 38px); line-height: 1.15; letter-spacing: -0.02em; }
+    .lead { max-width: 62ch; margin: 10px 0 0; color: var(--muted); font-size: 16px; }
+
+    /* Sections */
+    .section { padding-top: 36px; }
+    .section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 14px; }
+    .section-head h2, .panel h2 { margin: 0; color: var(--muted); font-size: 12px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; }
+    .section-head p { margin: 0; color: var(--faint); font-size: 13px; }
+
+    /* Tool cards */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+    .card { display: flex; gap: 14px; min-width: 0; padding: 18px; border: 1px solid var(--border); border-radius: var(--radius);
+            background: var(--surface); box-shadow: var(--shadow); text-decoration: none;
+            transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+    a.card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+    a.card:focus-visible, .chip:focus-visible, .copy:focus-visible, .brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .card-icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 10px;
+                 background: var(--accent-soft); color: var(--accent); }
+    .card-icon svg { width: 20px; height: 20px; }
+    .card-body { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+    .card-title { font-weight: 650; }
+    .card-text { color: var(--muted); font-size: 14px; }
+    .card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: auto; padding-top: 10px; }
+    .card-meta code { margin-right: 2px; color: var(--faint); }
+    .card-arrow { flex: none; color: var(--faint); transition: color 0.15s; }
+    .card-arrow svg { width: 16px; height: 16px; }
+    a.card:hover .card-arrow { color: var(--accent); }
+
+    .tag { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; background: var(--surface-muted);
+           color: var(--muted); font-size: 12px; font-weight: 550; white-space: nowrap; }
+    .tag svg { width: 11px; height: 11px; }
+    .tag-ok { background: var(--ok-soft); color: var(--ok); }
+    .tag-warn { background: var(--warn-soft); color: var(--warn); cursor: help; }
+
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .auth { margin-top: 14px; }
+    .ref { display: flex; flex-wrap: wrap; gap: 10px 36px; margin: 10px 0 0; font-size: 13px; }
+    .ref div { min-width: 0; }
+    .ref dt { color: var(--faint); font-size: 12px; }
+    .ref dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+
+    /* Environments and project links */
+    .split { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+    .panel { min-width: 0; padding: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+    .panel h2 { margin-bottom: 6px; }
+    .rows { margin: 0; padding: 0; list-style: none; }
+    .row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 0; border-top: 1px solid var(--border); }
+    .row:first-child { border-top: 0; }
+    .row-name { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid var(--border); border-radius: 8px;
+            background: var(--surface); font-size: 13px; text-decoration: none; }
+    .chip svg { width: 12px; height: 12px; color: var(--faint); }
+    a.chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chip-empty { border-style: dashed; background: transparent; color: var(--faint); cursor: help; }
+    .note { margin: 10px 2px 0; color: var(--faint); font-size: 13px; }
+
+    /* Commands */
+    .commands { margin: 0; padding: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius);
+                background: var(--surface); box-shadow: var(--shadow); list-style: none; }
+    .command { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(0, 1.7fr) auto; align-items: center; gap: 8px 16px;
+               padding: 12px 16px; border-top: 1px solid var(--border); }
+    .command:first-child { border-top: 0; }
+    .command-label { color: var(--muted); font-size: 14px; }
+    .command-code { padding: 6px 10px; overflow-x: auto; border-radius: 8px; background: var(--surface-muted); white-space: nowrap; }
+    .copy { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px;
+            background: var(--surface); color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+    .copy svg { width: 14px; height: 14px; }
+    .copy:hover { border-color: var(--border-strong); color: var(--text); }
+    .copy[data-state="copied"] { border-color: currentColor; color: var(--ok); }
+
+    .footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; padding-top: 44px; padding-bottom: 32px;
+              color: var(--faint); font-size: 13px; }
+    .footer a { color: var(--muted); }
+
+    @media (max-width: 820px) {
+      .split { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .container { padding: 0 16px; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .hero { padding-top: 32px; }
+      .command { grid-template-columns: minmax(0, 1fr) auto; }
+      .command-label { grid-column: 1 / -1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
 </head>
 <body>
-<main class="container">
-  <nav>
-    <ul>
-      <li><strong><%= link_to(Rails.root.basename.to_s.humanize, root_path) %></strong></li>
-    </ul>
-    <ul>
-      <li><%= link_to('API Documentation', api_docs_path, target: '_blank') %></li>
-<!--      <li><%#= link_to('Sidekiq', '/sidekiq', target: '_blank') %></li>-->
-      <li><%= link_to('Admin', '/motor_admin', target: '_blank') %></li>
-      <li><%= link_to('Tasks', '/maintenance_tasks', target: '_blank') %></li>
-      <li><%= link_to('Logs', '/sweet/staging', target: '_blank') %></li>
-      <li><%= link_to('APM', '/apm', target: '_blank') %></li>
-    </ul>
-  </nav>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <%= link_to root_path, class: 'brand' do %>
+        <span class="brand-mark" aria-hidden="true"><%= app_name.first %></span><span><%= app_name %></span>
+      <% end %>
+      <div class="topbar-actions">
+        <span class="env-pill" data-env="<%= Rails.env %>" title="Rails environment"><span class="env-dot"></span><%= Rails.env %></span>
+        <div class="theme-switch" role="group" aria-label="Color theme" hidden>
+          <% { system: [:monitor, 'System'], light: [:sun, 'Light'], dark: [:moon, 'Dark'] }.each do |theme, (icon, label)| %>
+            <button type="button" class="theme-option" data-theme-option="<%= theme %>" aria-pressed="false"
+                    title="<%= label %> theme" aria-label="<%= label %> theme">
+              <%= render 'development_pages/icon', name: icon %>
+            </button>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </header>
 
-  <%= yield %>
-</main>
+  <main class="container">
+    <%= yield %>
+  </main>
+
+  <footer class="container footer">
+    <span><%= app_name %> · <%= Rails.env %></span>
+    <% if Rails.env.local? %>
+      <span>Rails <%= Rails.version %> · Ruby <%= RUBY_VERSION %></span>
+    <% end %>
+  </footer>
+
+  <script>
+    // Theme switch: System follows the OS setting, Light/Dark are saved in localStorage
+    (function () {
+      var root = document.documentElement;
+      var storageKey = 'development-pages-theme';
+      var switcher = document.querySelector('.theme-switch');
+      var options = switcher.querySelectorAll('[data-theme-option]');
+
+      var sync = function () {
+        var current = root.dataset.theme || 'system';
+        options.forEach(function (option) {
+          option.setAttribute('aria-pressed', String(option.dataset.themeOption === current));
+        });
+      };
+
+      options.forEach(function (option) {
+        option.addEventListener('click', function () {
+          var theme = option.dataset.themeOption;
+          if (theme === 'system') delete root.dataset.theme; else root.dataset.theme = theme;
+          try {
+            if (theme === 'system') localStorage.removeItem(storageKey); else localStorage.setItem(storageKey, theme);
+          } catch (error) {}
+          sync();
+        });
+      });
+
+      switcher.hidden = false;
+      sync();
+    })();
+  </script>
 </body>
 </html>

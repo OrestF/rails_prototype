@@ -9,8 +9,10 @@ class User < ApplicationRecord
   # Include default devise modules. Others available are:
   # :confirmable, :trackable and :omniauthable
   devise :database_authenticatable, :jwt_authenticatable, :invitable, :lockable, :registerable,
-         :recoverable, :validatable, :timeoutable, jwt_revocation_strategy: self,
+         :recoverable, :validatable, jwt_revocation_strategy: self,
          lock_strategy: :none, unlock_strategy: :none
+
+  action_scope
 
   def role
     'admin'

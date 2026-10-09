@@ -1,12 +1,7 @@
 # frozen_string_literal: true
 
 class Search::Users < BaseSearch
-  ORDER_OPTIONS = order_options
-  FORM_OPTIONS = {
-    by_id: '*',
-    by_free_text: '*',
-    order_by: ORDER_OPTIONS
-  }.freeze
+  FORM_OPTIONS = User.options_for_search
   PERMITTED_ATTRIBUTES = FORM_OPTIONS.keys
 
   private

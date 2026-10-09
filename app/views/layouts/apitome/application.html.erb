@@ -8,8 +8,9 @@
   <%= stylesheet_link_tag "apitome/bundle", media: "all" %>
   <%#= stylesheet_link_tag "apitome/highlight_themes/#{Apitome.configuration.code_theme}", media: "all" %>
 
-  <%= javascript_include_tag "apitome/application" %>
+  <%# bundle first: it ships jQuery, Bootstrap and highlight.js that application.js uses (Propshaft skips its `require`s) %>
   <%= javascript_include_tag "apitome/bundle" %>
+  <%= javascript_include_tag "apitome/application" %>
 
 </head>
 <body class="<%= Apitome.configuration.single_page ? "single-page" : "" %>">

@@ -1,7 +1,7 @@
 require 'uri'
 require 'open-uri'
 
-# DEV_MODE=true rails new rvmd --database=postgresql --css=tailwind --skip-javascript --skip-sprockets --template="rails_prototype/template.rb" --skip-kamal
+# DEV_MODE=true rails new my_app --api --database=postgresql --skip-test --skip-kamal --skip-thruster --template="rails_prototype/template.rb"
 
 # TODO: add business specs foe existing operations
 def source_paths
@@ -9,82 +9,93 @@ def source_paths
 end
 
 def download_file(from_path, to_path = from_path)
+  # force: template files always replace the generated defaults, without a conflict prompt
   if ENV['DEV_MODE']
     # for local development and upgrades
-    copy_file from_path, to_path
+    copy_file from_path, to_path, force: true
   else
-    base_url = 'https://raw.githubusercontent.com/OrestF/rails_prototype/rails_api'
-    get([base_url, from_path].join('/'), to_path)
+    base_url = 'https://raw.githubusercontent.com/OrestF/rails_prototype/main'
+    get([base_url, from_path].join('/'), to_path, force: true)
   end
 end
 
 def add_gems
-  # gem 'sidekiq'
-  # gem 'sidekiq-cron'
-  # gem 'sidekiq-failures'
-  gem 'r_creds'
-  gem 'oj'
-  gem 'blueprinter'
-  gem 'pagy'
-  gem 'readymade'
-  gem 'api-pagination'
-  gem 'apitome'
-  # gem 'sprockets-rails', :require => 'sprockets/railtie'
-  gem 'rack-cors'
-  gem 'rspec_api_documentation'
-  gem 'devise-jwt'
-  gem 'devise_invitable'
-  gem 'xlog'
-  # gem "image_processing"
-  gem 'pundit'
-  gem 'passpartu'
+  # Overwrite the whole Gemfile so the generated app matches the house standard:
+  # alphabetical (Bundler/OrderedGems), Redis-free, Propshaft assets, no kamal/thruster/vcr/webmock/sweet_staging.
+  # Rails is pinned to the generator version so the generated configs match the runtime.
+  rails_version = [Rails::VERSION::MAJOR, Rails::VERSION::MINOR, Rails::VERSION::TINY].join('.')
 
-  gem 'file_exists'
-  gem 'motor-admin'
-  gem 'maintenance_tasks'
-  gem 'sweet_staging'
-  gem 'rails_performance'
+  create_file 'Gemfile', <<~GEMFILE, force: true
+    source 'https://rubygems.org'
 
-  # gem 'elasticsearch'
-  # gem 'searchkick'
+    gem 'rails', '~> #{rails_version}'
 
-  gem "mission_control-jobs"
+    gem 'action_scope'
+    gem 'api-pagination', '~> 6.0' # 7.x references Pagy::OPTIONS, which Pagy 9 does not have
+    gem 'apitome'
+    gem 'blueprinter'
+    gem 'bootsnap', require: false
+    gem 'devise_invitable'
+    gem 'devise-jwt'
+    gem 'exception_notification'
+    gem 'file_exists'
+    gem 'image_processing'
+    gem 'maintenance_tasks'
+    gem 'mission_control-jobs'
+    gem 'motor-admin'
+    gem 'oj'
+    gem 'overcommit', require: false # shells out to `git --version` when required
+    gem 'pagy', '~> 9.4' # Pagy 43 removed Pagy::Backend (used by Api::BaseController and BaseSearch)
+    gem 'passpartu'
+    gem 'pg'
+    gem 'propshaft'
+    gem 'puma'
+    gem 'pundit'
+    gem 'rack-cors'
+    gem 'r_creds'
+    gem 'readymade'
+    gem 'rspec_api_documentation'
+    gem 'solid_cable'
+    gem 'solid_cache'
+    gem 'solid_queue'
+    gem 'tzinfo-data', platforms: %i[ windows jruby ]
+    gem 'xlog'
 
-  gem 'action_scope'
+    group :development, :test do
+      gem 'brakeman', require: false
+      gem 'bundler-audit', require: false
+      gem 'byebug'
+      gem 'debug', platforms: %i[ mri windows ], require: 'debug/prelude'
+      gem 'factory_bot_rails'
+      gem 'faker'
+      gem 'fasterer'
+      gem 'rubocop-rails-omakase', require: false
+    end
 
-  gem_group :development, :test do
-    # gem 'dotenv'
-    gem 'byebug'
-  end
+    group :development do
+      gem 'bullet'
+      gem 'rubocop'
+      gem 'rubocop-performance'
+      gem 'rubocop-rspec'
+      gem 'rubycritic'
+    end
 
-  gem_group :development do
-    gem 'rubocop'
-    gem 'rubycritic'
-    gem 'brakeman'
-    gem 'bullet'
-  end
-
-  gem_group :test do
-    gem 'rspec-retry'
-    gem 'simplecov'
-    gem 'rspec-rails', '~> 4.0', '>= 4.0.1'
-    # gem 'rspec-sidekiq'
-    gem 'vcr'
-    gem 'fakeredis'
-    gem 'factory_bot_rails'
-    gem 'faker'
-    gem 'database_cleaner'
-    gem 'webmock'
-  end
+    group :test do
+      gem 'database_cleaner'
+      gem 'rspec-rails'
+      gem 'rspec-retry'
+      gem 'simplecov', '~> 0.22.0', require: false # spec/support/simplecov_profile.rb uses the 0.x add_filter/add_group API
+    end
+  GEMFILE
 end
 
 def copy_configs
   download_file 'config/initializers/blueprinter.rb'
-  download_file 'config/initializers/devise.rb'
+  # config/initializers/devise.rb is downloaded in setup_devise, after devise:install
   download_file 'business/permissions.yml'
   download_file 'config/initializers/passpartu.rb'
   download_file 'config/initializers/r_creds.rb'
-  download_file 'config/initializers/redis.rb'
+  # download_file 'config/initializers/redis.rb' # Redis-free: Solid Cache/Queue/Cable instead
   download_file 'config/initializers/flash.rb'
   download_file 'config/initializers/oj.rb'
   # download_file 'config/initializers/searchkick.rb'
@@ -104,14 +115,6 @@ def configure_cors
   end \n"
 end
 
-# def configure_sprockets
-#   insert_into_file(
-#     'config/application.rb',
-#     "require 'sprockets/railtie'\n\n",
-#     before: 'Bundler.require(*Rails.groups)'
-#   )
-# end
-
 def download_spec_acceptance_directory
   download_file 'spec/acceptance/api/devise/invitations_spec.rb'
   download_file 'spec/acceptance/api/devise/passwords_spec.rb'
@@ -128,9 +131,10 @@ def download_spec_support_directory
   # download_file 'spec/support/fakeredis.rb' # invalid file configuration
   download_file 'spec/support/form_parameters.rb'
   download_file 'spec/support/json.rb'
+  download_file 'spec/support/rspec_api_documentation_patches.rb' # OpenAPI writer fixes
   download_file 'spec/support/search.rb'
   download_file 'spec/support/simplecov_profile.rb'
-  download_file 'spec/support/vcr.rb'
+  # download_file 'spec/support/vcr.rb' # VCR/WebMock removed
 end
 
 def download_spec_factories_directory
@@ -154,6 +158,7 @@ def configure_tests
   environment 'config.generators.test_framework = :rspec'
 end
 
+# DEPRECATED: sweet_staging is no longer in the Gemfile; add `gem 'sweet_staging'` back to use it
 def setup_sweet_staging
   download_file 'config/initializers/sweet_staging.rb'
 end
@@ -162,27 +167,23 @@ def setup_rails_performance
   download_file 'config/initializers/rails_performance.rb'
 end
 
+# Propshaft serves everything under app/assets/* (and the engines' asset dirs) as is, no manifest needed
 def download_assets_directory
-  download_file 'app/assets/config/manifest.js'
   download_file 'app/assets/images/.keep'
   download_file 'app/assets/javascripts/.keep'
   download_file 'app/assets/stylesheets/.keep'
 end
 
 def setup_apidocs
+  # Generator first: it writes config/initializers/apitome.rb, which is then replaced by ours
+  rails_command 'generate apitome:install'
   download_file 'config/initializers/apitome.rb'
   download_file 'config/initializers/rspec_api_documentation.rb'
-  download_file 'app/assets/config/manifest.js'
-  download_file 'view/layouts/apitome/application.html.erb'
-  rails_command 'generate apitome:install'
-  insert_into_file(
-    'app/assets/config/manifest.js',
-    "//= link apitome/application.css
-//= link apitome/highlight_themes/default.css
-//= link apitome/application.js"
-  )
+  download_file 'doc/configurations/api/open_api.yml' # OpenAPI info/host/schemes
+  # Propshaft ignores the `require` directives in apitome/application.{css,js},
+  # so this layout links bootstrap and the prebuilt apitome bundles directly
+  download_file 'app/views/layouts/apitome/application.html.erb'
 
-  route "get '/api/docs', to: 'apidocs#index'"
   download_file 'app/controllers/apidocs_controller.rb'
 end
 
@@ -202,28 +203,80 @@ end
 #   )
 # end
 
+# Production already runs Active Job on Solid Queue (Rails default); development gets the same setup,
+# with its own queue database, instead of the in-memory :async adapter. Must run before setup_db.
 def setup_solid_queue
-  route "\n  mount MissionControl::Jobs::Engine, at: '/jobs'\n\n"
+  gsub_file 'config/database.yml',
+            /^development:\n  <<: \*default\n  database: (\w+)_development\n/,
+            <<~'YAML'
+              development:
+                primary: &primary_development
+                  <<: *default
+                  database: \1_development
+                queue:
+                  <<: *primary_development
+                  database: \1_development_queue
+                  migrations_paths: db/queue_migrate
+            YAML
 
-  # TODO: Setup mission control jobs initializer
-  # rails mission_control:jobs:authentication:configure
-  # rails_command 'mission_control:jobs:authentication:configure'
+  environment 'config.solid_queue.connects_to = { database: { writing: :queue } }', env: 'development'
+  environment 'config.active_job.queue_adapter = :solid_queue', env: 'development'
+
+  # /jobs is mounted behind with_admin_auth (see setup_routes), so the engine's own
+  # basic auth (enabled by default, 401 until credentials are configured) is not needed
+  environment 'config.mission_control.jobs.http_basic_auth_enabled = false'
 end
 
-def setup_routes_auth
-  insert_into_file(
-    'config/routes.rb',
-    "\n  with_admin_auth = lambda do |app|
-    Rack::Builder.new do
-      use Rack::Auth::Basic do |username, password|
-        ActiveSupport::SecurityUtils.secure_compare(Digest::SHA256.hexdigest(username), Digest::SHA256.hexdigest(RCreds.fetch(:admin, :username))) &
-          ActiveSupport::SecurityUtils.secure_compare(Digest::SHA256.hexdigest(password), Digest::SHA256.hexdigest(RCreds.fetch(:admin, :password)))
+# Written in one go, after every generator that injects routes (devise, motor, maintenance_tasks):
+# single guarded maintenance_tasks mount, admin basic auth only outside local envs, no generator boilerplate.
+def setup_routes
+  create_file 'config/routes.rb', <<~'RUBY', force: true
+    Rails.application.routes.draw do
+      constraints format: :json do
+        devise_for :users,
+                   path: '/api/v1/users/',
+                   controllers: { sessions: 'api/devise/sessions',
+                                  passwords: 'api/devise/passwords',
+                                  registrations: 'api/devise/registrations',
+                                  invitations: 'api/devise/invitations' }
       end
-      run app
+
+      namespace :api, defaults: { format: :json } do
+        namespace :v1 do
+          resources :users, only: %i[] do
+            collection do
+              get :profile
+              patch :profile, to: 'users#update_profile'
+            end
+          end
+        end
+      end
+
+      with_admin_auth = lambda do |app|
+        Rack::Builder.new do
+          unless Rails.env.local?
+            use Rack::Auth::Basic do |username, password|
+              ActiveSupport::SecurityUtils.secure_compare(Digest::SHA256.hexdigest(username),
+                                                          Digest::SHA256.hexdigest(RCreds.fetch(:admin, :username))) &
+                ActiveSupport::SecurityUtils.secure_compare(Digest::SHA256.hexdigest(password),
+                                                            Digest::SHA256.hexdigest(RCreds.fetch(:admin, :password)))
+            end
+          end
+          run app
+        end
+      end
+
+      mount with_admin_auth.call(MaintenanceTasks::Engine), at: '/maintenance_tasks'
+      mount with_admin_auth.call(MissionControl::Jobs::Engine), at: '/jobs'
+      mount Motor::Admin => '/motor_admin'
+
+      root to: 'development_pages#home'
+
+      get '/api/docs', to: 'apidocs#index'
+      get 'open_api_docs', to: 'development_pages#open_api_docs'
+      get 'up' => 'rails/health#show', as: :rails_health_check
     end
-  end\n",
-    after: 'Rails.application.routes.draw do'
-  )
+  RUBY
 end
 
 def setup_controllers
@@ -235,6 +288,7 @@ def setup_controllers
   download_file 'app/controllers/api/v1/direct_uploads_controller.rb'
   download_file 'app/controllers/api/base_controller.rb'
 
+  download_file 'app/controllers/concerns/admin_basic_auth.rb'
   download_file 'app/controllers/concerns/authorizer.rb'
   download_file 'app/controllers/concerns/error_handler.rb'
 
@@ -243,7 +297,6 @@ def setup_controllers
 end
 
 def setup_pundit
-  download_file 'app/assets/config/manifest.js' # fix
   generate 'pundit:install'
   download_file 'app/policies/application_policy.rb'
 end
@@ -253,8 +306,8 @@ def setup_db
 end
 
 def copy_docker
-  download_file 'nginx/staging.conf'
-  download_file 'nginx/production.conf'
+  # download_file 'nginx/staging.conf'    # not present in the source repo (404)
+  # download_file 'nginx/production.conf' # not present in the source repo (404)
 
   download_file 'docker-compose.test.yml'
   download_file 'docker-compose.yml'
@@ -343,7 +396,8 @@ def setup_direct_uploads
 end
 
 def setup_kamal
-  template 'kamal-secrets.tt', '.kamal/secrets'
+  # Inlined (was `template 'kamal-secrets.tt'`): a remote template has no local source_paths to render from
+  create_file '.kamal/secrets', "#{SecureRandom.hex(64)}\n", force: true
 end
 
 def download_services_folder
@@ -402,8 +456,10 @@ end
 def setup_home_page
   download_file 'app/controllers/development_pages_controller.rb'
   download_file 'app/views/development_pages/home.html.erb'
+  download_file 'app/views/development_pages/_tool_card.html.erb'
+  download_file 'app/views/development_pages/_chips.html.erb'
+  download_file 'app/views/development_pages/_icon.html.erb'
   download_file 'app/views/layouts/development_pages.html.erb'
-  route "root to: 'development_pages#home'"
 end
 
 def setup_users
@@ -423,28 +479,7 @@ def setup_users
 
   download_file 'business/users/operations/send_password_restore_email.rb'
   download_file 'business/users/forms/send_password_restore_email.rb'
-
-  gsub_file 'config/routes.rb', /devise_for :users/, ''
-
-  route "\n  constraints format: :json do
-      devise_for :users,
-                 path: '/api/v1/users/',
-                 controllers: { sessions: 'api/devise/sessions',
-                                passwords: 'api/devise/passwords',
-                                registrations: 'api/devise/registrations',
-                                invitations: 'api/devise/invitations' }
-    end
-
-namespace :api, defaults: { format: :json } do
-    namespace :v1 do
-      resources :users, only: %i[] do
-        collection do
-          get :profile
-          patch :profile, to: 'users#update_profile'
-        end
-      end
-    end
-  end\n"
+  # API devise routes are written in setup_routes
 end
 
 def cleanup
@@ -469,13 +504,8 @@ def setup_motor_admin
 end
 
 def setup_maintenance_tasks
+  # The generator also mounts the engine without auth; setup_routes replaces that with a guarded mount
   generate 'maintenance_tasks:install'
-
-  insert_into_file(
-    'config/routes.rb',
-    "\n  mount with_admin_auth.call(MaintenanceTasks::Engine), at: '/maintenance_tasks'\n\n",
-    after: 'get "up" => "rails/health#show", as: :rails_health_check'
-  )
 end
 
 def post_setup_message
@@ -497,6 +527,23 @@ devise:
     cp config/credentials/development.key config/credentials/test.key
   TEXT
 
+  puts '______________________________________________API DOCS____________________________________________________________'
+  puts <<-TEXT
+  Acceptance specs (spec/acceptance) generate the API docs, after the credentials above are set:
+    bundle exec rake docs:generate RAILS_ENV=test
+  It writes doc/api/*.json for Apitome (/api/docs) and doc/api/open_api.json (Swagger 2.0),
+  which is downloadable from the home page (/open_api_docs).
+  TEXT
+
+  puts '______________________________________________BACKGROUND JOBS_____________________________________________________'
+  puts <<-TEXT
+  Active Job runs on Solid Queue (development and production). Start a worker with:
+    bin/jobs
+  or run it inside Puma:
+    SOLID_QUEUE_IN_PUMA=1 bin/rails server
+  Jobs dashboard: /jobs
+  TEXT
+
   puts '______________________________________________MOTOR ADMIN_____________________________________________________'
   puts <<-TEXT
   IMPORTANT!
@@ -504,6 +551,263 @@ devise:
   MOTOR_AUTH_USERNAME
   MOTOR_AUTH_PASSWORD
   TEXT
+end
+
+def setup_house_style
+  create_file '.rubocop.yml', <<~YAML, force: true
+    inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+
+    plugins:
+      - rubocop-rspec
+      - rubocop-performance
+
+    AllCops:
+      NewCops: enable
+      SuggestExtensions: false
+      Exclude:
+        - bin/*
+        - db/schema.rb
+        - data/concerns/readymade/**/*
+        - '**/vendor/**/*'
+        - '**/gems/**/*'
+      TargetRubyVersion: #{RUBY_VERSION}
+
+
+    # ====== Metrics ======
+
+    Metrics/MethodLength:
+      Max: 50
+      Exclude:
+        - db/migrate/**/*
+
+    Metrics/AbcSize:
+      Exclude:
+        - db/migrate/**/*
+        - infrastructure/blueprint_policy_extractor.rb
+
+    Metrics/CyclomaticComplexity:
+      Exclude:
+        - infrastructure/blueprint_policy_extractor.rb
+
+    Metrics/PerceivedComplexity:
+      Exclude:
+        - infrastructure/blueprint_policy_extractor.rb
+
+    Metrics/BlockLength:
+      Exclude:
+        - spec/acceptance/**/*
+        - spec/business/**/*
+        - spec/data/**/*
+        - config/**/*.rb
+        - config/routes.rb
+        - spec/**/*
+        - lib/**/*
+        - data/concerns/**/*
+        - db/**/*
+
+    Metrics/ModuleLength:
+      Exclude:
+        - data/concerns/**/*
+
+    Metrics/ClassLength:
+      Max: 120
+
+
+    # ====== Style ======
+
+    Style/HashSyntax:
+      Enabled: false
+
+    Style/ClassAndModuleChildren:
+      Enabled: false
+
+    Style/Proc:
+      Enabled: false
+
+    Style/SymbolProc:
+      Exclude:
+        - app/serializers/**/*
+
+    Style/RedundantSelfAssignment:
+      Enabled: false
+
+    Style/StringLiterals:
+      EnforcedStyle: single_quotes
+      Exclude:
+        - db/schema.rb
+        - db/queue_schema.rb
+        - db/cache_schema.rb
+
+    Style/IfUnlessModifier:
+      Enabled: false
+
+    Style/FileWrite:
+      Enabled: false
+
+    Style/Documentation:
+      Enabled: false
+
+    Style/SafeNavigationChainLength:
+      Max: 5
+
+    Style/EmptyStringInsideInterpolation:
+      Enabled: false
+
+    Style/RedundantLineContinuation:
+      Enabled: false
+
+    Style/WordArray:
+      Exclude:
+        - db/queue_schema.rb
+        - db/cache_schema.rb
+
+    Style/FrozenStringLiteralComment:
+      Exclude:
+        - db/queue_schema.rb
+        - db/cache_schema.rb
+
+    Bundler/OrderedGems:
+      Enabled: true
+
+
+    # ====== Other ======
+
+    Layout/LineLength:
+      Max: 140
+      Exclude:
+        - config/initializers/**/*
+        - config/routes.rb
+        - config/routes/*.rb
+        - spec/**/**/*
+
+    Naming/MemoizedInstanceVariableName:
+      Enabled: false
+
+    Naming/PredicateMethod:
+      Enabled: false
+
+    Performance/Count:
+      Enabled: false
+
+    Lint/MissingSuper:
+      Enabled: false
+
+    # ====== RSpec ======
+
+    RSpec/EmptyExampleGroup:
+      Enabled: false
+
+    RSpec/HookArgument:
+      Enabled: false
+
+    RSpec/ScatteredLet:
+      Enabled: false
+
+    RSpec/AnyInstance:
+      Enabled: false
+
+    RSpec/IndexedLet:
+      Enabled: false
+
+    RSpec/ExampleLength:
+      Max: 25
+
+    RSpec/LetSetup:
+      Enabled: false
+
+    RSpec/NestedGroups:
+      Enabled: false
+
+    RSpec/ContextWording:
+      Exclude:
+        - spec/data/**/*
+        - spec/support/shared_contexts/*
+        - spec/support/shared_contexts/**/*
+
+    RSpec/MessageSpies:
+      Enabled: false
+
+    RSpec/MultipleExpectations:
+      Enabled: false
+
+    RSpec/MultipleMemoizedHelpers:
+      Enabled: false
+
+    RSpec/Output:
+      Exclude:
+        - spec/spec_helper.rb
+  YAML
+
+  create_file '.overcommit.yml', <<~'YAML', force: true
+    verify_signatures: false
+
+    PreCommit:
+      ALL:
+        exclude:
+          - 'node_modules/**/*'
+
+      AuthorName:
+        enabled: false
+
+      AuthorEmail:
+        enabled: false
+
+      BundlerAudit:
+        enabled: true
+        description: 'Check for vulnerable versions of gems'
+        required_executable: 'bundler-audit'
+        command: ['bundle', 'exec', 'bundler-audit', 'check']
+        flags:   ['--update']
+        on_fail: 'warn'
+
+      Brakeman:
+        enabled: true
+        description: 'Check for security vulnerabilities'
+        required_executable: 'brakeman'
+        command: ['bundle', 'exec', 'brakeman', '--skip-files', 'app/controllers/pages_controller.rb']
+        flags: ['--exit-on-warn', '--except', 'MassAssignment,PermitAttributes,SendFile']
+
+      Fasterer:
+        enabled: true
+        description: 'Analyzing for potential speed improvements'
+        required_executable: 'fasterer'
+        command: ['bundle', 'exec', 'fasterer']
+        include: '**/*.rb'
+
+      RuboCop:
+        enabled: true
+        description: 'Analyze with RuboCop'
+        required_executable: 'rubocop'
+        command: ['bundle', 'exec', 'rubocop']
+        include:
+          - '**/*.gemspec'
+          - '**/*.rake'
+          - '**/*.rb'
+          - '**/*.ru'
+          - '**/Gemfile'
+          - '**/Rakefile'
+
+    #PrePush:
+    #  RSpec:
+    #    enabled: true
+    #    description: 'Run RSpec test suite'
+    #    required_executable: 'rspec'
+    #    command: ['bundle', 'exec', 'rspec']
+
+
+    PreRebase:
+      MergedCommits:
+        enabled: false
+  YAML
+
+  append_to_file '.gitignore', <<~'GITIGNORE'
+
+    # Ignore key files for decrypting credentials and more.
+    /config/credentials/*.key
+
+    # Ignore precompiled assets (Propshaft writes them to public/assets).
+    /public/assets
+  GITIGNORE
 end
 
 # Main setup
@@ -516,10 +820,8 @@ after_bundle do
   setup_controllers
   setup_pundit
   download_policies_folder
-  setup_routes_auth
   # setup_sidekiq
   configure_cors
-  # configure_sprockets # migrate to propshaft
   download_assets_directory
   configure_tests
   setup_apidocs
@@ -535,11 +837,14 @@ after_bundle do
   download_services_folder
   setup_home_page
 
+  setup_solid_queue
   setup_db
   setup_motor_admin
   setup_maintenance_tasks
-  setup_sweet_staging
-  setup_rails_performance
+  # setup_sweet_staging # DEPRECATED
+  # setup_rails_performance # needs Redis
+
+  setup_routes
 
   copy_docker
 
@@ -548,6 +853,11 @@ after_bundle do
   # generate_api_docs # optional
 
   setup_default_url_options
+
+  setup_house_style
+
+  # Normalize the whole tree to the house style (non-fatal)
+  run 'bundle exec rubocop -A'
 
   post_setup_message
 end

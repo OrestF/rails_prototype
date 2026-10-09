@@ -21,7 +21,8 @@ class Api::Devise::SessionsController < Devise::SessionsController
     request.env['warden-jwt_auth.token']
   end
 
-  def respond_to_on_destroy
+  # Devise 5 passes keyword args (e.g. non_navigational_status:) on sign out
+  def respond_to_on_destroy(**)
     head :no_content
   end
 end
