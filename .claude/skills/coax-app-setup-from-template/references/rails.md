@@ -29,7 +29,9 @@ files) from the same branch, so `template.rb` and its files always come from one
 The Wiki's Project setup page links [railsbytes Xo5s6a](https://railsbytes.com/templates/Xo5s6a). That is an
 older revision of this template: Redis, sweet_staging, Sprockets and rspec-rails 4. Do not use it unless the
 competence lead asks for it, and mention that the Wiki link is stale. With a local checkout, record its branch
-and `git status` in the checklist header so it is clear exactly what was used.
+and `git status` in the checklist header so it is clear exactly what was used. A local checkout also copies
+untracked files, so a run that works in `DEV_MODE` can still 404 from GitHub: commit every file `template.rb`
+downloads before merging template changes to `main`.
 
 ## 2. What the template provides
 
@@ -280,6 +282,8 @@ Add these to the checklist's "Additional items" in step 2:
 | `Bad CPU type in executable` / `Errno::EBADARCH` mentioning git | A broken git binary is first on `PATH` | Put a directory with a symlink to a working git first on `PATH` |
 | Dozens of `already initialized constant RDoc::...` warnings from `gem` | Two rdoc versions installed | Harmless |
 | `Sprockets::Railtie::ManifestNeededError` | An old template revision (railsbytes, or an old branch) | Use the current template |
+| `undefined method 'assets' for an instance of Rails::Engine::Configuration` from `apitome/engine.rb` during generation; the log shows `rspec-rails (~> 4.0, >= 4.0.1)`, `fakeredis` and `app/assets/config/manifest.js` | GitHub `main` serves an old template revision (the current one is not merged yet) | Merge the current template into `main`, then clean the directory back to the setup commits (`git checkout -- . && git clean -fdx`) and regenerate |
+| `OpenURI::HTTPError 404` during generation | `template.rb` downloads a file that is not committed on `main` | Commit the file and merge it to `main` |
 | `uninitialized constant Pagy::Backend` | Pagy 43 resolved | The template pins `pagy ~> 9.4`; check the Gemfile |
 | `ArgumentError: Expected name: to be a String, got NilClass` on eager load | Admin credentials missing (class-level `http_basic_authenticate_with`) | Configure credentials (Configure step 1) |
 | Brakeman `EOLRails`: "Support for Rails X ends on ..." | The project was generated with an ageing Rails minor | Regenerate with the newest Rails (Prerequisites) |
