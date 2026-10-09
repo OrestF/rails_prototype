@@ -1,0 +1,23 @@
+# Document-level metadata for doc/api/open_api.json (Swagger 2.0), written by:
+#   bundle exec rake docs:generate RAILS_ENV=test
+# Paths and operations come from spec/acceptance. Without this file the gem fills in its Petstore sample values.
+# ERB is evaluated (spec/support/rspec_api_documentation_patches.rb), e.g. for a staging/production document:
+#   API_HOST=api.example.com API_SCHEME=https bundle exec rake docs:generate RAILS_ENV=test
+swagger: '2.0'
+info:
+  title: "<%= Rails.application.class.module_parent_name.titleize %> API"
+  description: "REST API for <%= Rails.application.class.module_parent_name.titleize %>"
+  version: '1.0.0'
+  termsOfService: ''
+  contact:
+    hide: true # replace with name/url/email to publish a contact
+  license:
+    hide: true # replace with name/url to publish a license
+host: "<%= ENV.fetch('API_HOST', 'localhost:3000') %>"
+basePath: /
+schemes:
+  - <%= ENV.fetch('API_SCHEME', 'http') %>
+consumes:
+  - application/json
+produces:
+  - application/json
