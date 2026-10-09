@@ -335,6 +335,15 @@ def copy_docker
   end
 end
 
+# Lint on the runner, specs in Docker Compose, SonarQube with coverage. The source has no leading dot, so GitHub
+# does not run it as a workflow of this template repository. It replaces the generator's ci.yml, which runs no
+# specs and triggers only on main.
+def setup_ci
+  download_file 'github/workflows/docker_ci.yml', '.github/workflows/docker_ci.yml'
+  gsub_file '.github/workflows/docker_ci.yml', '<app_name>', app_name
+  remove_file '.github/workflows/ci.yml'
+end
+
 # Containers reach the postgres service through POSTGRES_* (stack.env); local runs get nil from RCreds and keep
 # using the socket
 def configure_database_env
@@ -883,6 +892,7 @@ after_bundle do
   setup_routes
 
   copy_docker
+  setup_ci
 
   cleanup
 

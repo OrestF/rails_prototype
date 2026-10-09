@@ -14,11 +14,19 @@ and tick the checklist as you go.
 | React Native | None listed on the Wiki | `react-native` | Not defined on the Wiki |
 
 Confirm the template with the competence lead first. The Wiki says to ask when a stack has no template listed,
-which today is React Native: agree the starting point, linters and hook tool, and record them in the checklist.
+which today is React Native: agree the starting point, linters and hook tool, and note them in the checklist.
 
-The checklist is technology-agnostic. Its "What the items mean for your stack" table maps every item to these
-stacks (hook tool, linters, what "runs locally" means, whether Docker applies), so use it as written. Mobile apps
-mark the Docker section `[-]` with the reason, unless the project ships its own services.
+The checklist is the same for every stack. What its items mean here:
+
+| Checklist item | Python (Django) | Node.js (NestJS) | React / Next.js | React Native |
+| --- | --- | --- | --- | --- |
+| Git hooks installed | pre-commit ([Git-flow](https://coaxsoftware.atlassian.net/wiki/x/L4AjAQ)) | not defined on the Wiki: agree it | not defined on the Wiki: agree it | not defined on the Wiki: agree it |
+| Runs locally | dev server answers its health check | dev server answers its health check | dev server serves the app, and the production build succeeds | app builds and launches on an iOS simulator and an Android emulator |
+| Runs in Docker | required | required | required (dev server or production build) | usually `[-]`, unless the project ships its own services |
+
+Whenever the template ships Docker files, validate and fix the Docker setup as `SKILL.md` describes ("Docker
+setup"): build the image, start the development stack, check the app from its container, and run CI's container
+run when CI uses one. Use the commands from the template's README, since these stacks have no bundled script yet.
 
 ## Adding a technology reference
 
@@ -35,9 +43,12 @@ Once a template is reliable enough to automate, add `references/<technology>.md`
 5. **Configure**: secrets and environment files, generated docs, seed data.
 6. **Verify: the definition of green**: build or boot, tests (locally and as CI runs them), linters, security
    scan, and checks against the running app (health check, pages, or a simulator launch). Prefer a
-   bundled `scripts/verify_<technology>.sh` that prints PASS/FAIL per check.
+   bundled `scripts/verify_<technology>.sh` that prints PASS/FAIL per check. When the template ships Docker files,
+   add a Docker verification too (`scripts/verify_<technology>_docker.sh`, modelled on
+   `verify_rails_docker.sh`), plus the Docker fixes the template needs.
 7. **Run the app**: command, port or simulator/emulator, background-job workers, and how to keep it running.
 8. **Remaining checklist items**: how to automate and verify Git hooks, CI, Docker, README for this stack.
 9. **Known failures**: symptom, cause, fix. Grow it from real setup runs.
 
-Then add the technology to the table in `SKILL.md` and, if its CI differs, add `assets/<technology>/ci.yml`.
+Then add the technology to the table in `SKILL.md`. Ship the CI workflow from the template itself, as
+rails_prototype does with `github/workflows/docker_ci.yml`, and say in the reference how to fit it to the project.
