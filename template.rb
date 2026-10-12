@@ -360,7 +360,6 @@ end
 def copy_docs
   download_file 'README_EXAMPLE.md', 'README.md'
   download_file 'CHANGELOG_EXAMPLE.md', 'CHANGELOG.md'
-  download_file 'lemme_check_remote.sh'
   empty_directory '.docs'
 end
 
